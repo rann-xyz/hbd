@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>og-cover — the 1200x630 social card</title>
+<!--
+  ============================================================
+  THE SOCIAL CARD, DRAWN FROM THE SITE'S OWN ART.
+
+  This page is the generator for public/assets/og-cover.png. It is not
+  part of the site build: it exists so the card can be redrawn whenever
+  the artwork moves, instead of being a picture nobody can reproduce.
+
+  It imports the real ornaments from src/lib/svg.ts, so the cake on the
+  card is the cake on the page — same two tiers, same single candle,
+  same slice. It uses the palette from src/styles/tokens.css and nothing
+  else; src/tests/ogCover.test.ts holds both promises.
+
+  To redraw it:
+    1. npm run dev
+    2. open http://localhost:5173/scripts/og-cover.html at 1200x630
+    3. screenshot the viewport (no scrollbars, no zoom) over
+       public/assets/og-cover.png
+  ============================================================
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600&family=DM+Sans:wght@300;400;500&family=Caveat:wght@400;500;600&display=swap"
+/>
+<style>
+  :root {
+    --cream: #FFF9F4;
+    --blush: #F4DDE1;
+    --dusty-rose: #C58F99;
+    --cocoa: #513A40;
+    --muted-pink: #E8C5CB;
+    --cream-deep: #F7EDE4;
+    --cocoa-soft: #6B4F56;
+    --rose-text: #965F6B;
+    --cocoa-display: #46323A;
+    --font-display: 'Cormorant Garamond', 'Iowan Old Style', 'Times New Roman', serif;
+    --font-body: 'DM Sans', system-ui, sans-serif;
+    --font-hand: 'Caveat', 'Segoe Script', cursive;
+  }
+
+  * { box-sizing: border-box; }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    width: 1200px;
+    height: 630px;
+    overflow: hidden;
+  }
+
+  body {
+    background: var(--cream);
+    color: var(--cocoa);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* The stage is the card. Everything inside it is placed by hand. */
+  .card {
+    position: relative;
+    width: 1200px;
+    height: 630px;
+    overflow: hidden;
+    background:
+      radial-gradient(120% 90% at 50% 6%, #FFFFFF 0%, rgba(255, 255, 255, 0) 58%),
+      linear-gradient(180deg, #FFF9F4 0%, #FBF1E9 62%, #F7EDE4 100%);
+  }
+
+  /* Paper grain, at the same strength the page uses. */
+  .card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.42'/%3E%3C/svg%3E");
+  }
+
+  .layer {
+    position: absolute;
+  }
+
+  /* ---------- the string of pennants ---------- */
+  .bunting {
+    top: -54px;
+    left: 0;
+    width: 1200px;
+  }
+
+  .bunting svg {
+    display: block;
+    width: 1200px;
+    height: auto;
+  }
+
+  /* ---------- balloons, flanking the cake ---------- */
+  .balloons {
+    top: 416px;
+    width: 300px;
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+  }
+
+  /* Each bunch leans in towards the cake. */
+  .balloons--left { left: 56px; justify-content: flex-end; }
+  .balloons--right { right: 56px; justify-content: flex-start; }
+
+  .balloons svg { display: block; }
+
+  /* ---------- the words ---------- */
+  .words {
+    top: 158px;
+    left: 0;
+    right: 0;
+    text-align: center;
+  }
+
+  .eyebrow {
+    margin: 0 0 6px;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+    color: var(--cocoa-soft);
+  }
+
+  .hand {
+    margin: 0;
+    font-family: var(--font-hand);
+    font-size: 52px;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--rose-text);
+  }
+
+  .name {
+    margin: -6px 0 0;
+    font-family: var(--font-display);
+    font-size: 100px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    color: var(--cocoa-display);
+  }
+
+  .rule {
+    width: 132px;
+    height: 1px;
+    margin: 14px auto 0;
+    background: var(--dusty-rose);
+    opacity: 0.55;
+  }
+
+  /* ---------- the cake, already cut, with its one candle ---------- */
+  .cake {
+    top: 348px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 220px;
+  }
+
+  .cake > svg {
+    display: block;
+    width: 220px;
+    height: auto;
+  }
+
+  /* The card shows the cake with its slice already out: the same state the
+     page reaches when the reader cuts it. */
+  .cake__gap,
+  .cake__slice { opacity: 1; }
+
+  /* The candle is the page's candle, at the page's size: the cake art leaves
+     the space above the top tier empty on purpose. */
+  .candle {
+    position: absolute;
+    top: 0.5%;
+    left: 50%;
+    transform: translateX(-50%);
+    display: grid;
+    justify-items: center;
+    padding: 0.35rem;
+  }
+
+  .candle__stick {
+    width: 6px;
+    height: 32px;
+    background: var(--cream);
+    border: 1px solid rgba(197, 143, 153, 0.55);
+    border-radius: 3px;
+  }
+
+  /* ---------- confetti ---------- */
+  .confetti {
+    inset: 0;
+  }
+
+  .confetti span {
+    position: absolute;
+    width: 9px;
+    height: 13px;
+    border-radius: 1px;
+    transform: rotate(var(--turn));
+  }
+
+  /* ---------- the foot ---------- */
+  .foot {
+    left: 0;
+    right: 0;
+    bottom: 12px;
+    text-align: center;
+    font-family: var(--font-hand);
+    font-size: 27px;
+    color: var(--cocoa-soft);
+  }
+
+  .foot b {
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--dusty-rose);
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="layer confetti" id="confetti" aria-hidden="true"></div>
+
+    <div class="layer bunting" id="bunting" aria-hidden="true"></div>
+    <div class="layer balloons balloons--left" id="balloons-left" aria-hidden="true"></div>
+    <div class="layer balloons balloons--right" id="balloons-right" aria-hidden="true"></div>
+
+    <div class="layer words">
+      <p class="eyebrow">A handmade little something</p>
+      <p class="hand">Happy Birthday</p>
+      <!-- Left empty on purpose: the name is read from content.ts below, so the
+           card can never spell it differently from the site. -->
+      <p class="name"></p>
+      <div class="rule"></div>
+    </div>
+
+    <div class="layer cake" id="cake" aria-hidden="true"></div>
+
+    <div class="layer foot">
+      a little world made for you &nbsp;·&nbsp; <b>rann-xyz.github.io/hbd</b>
+    </div>
+  </div>
+
+<script type="module">
+  import { RECIPIENT } from '../src/content.ts';
+  import { balloon, bunting, cake, flame } from '../src/lib/svg.ts';
+
+  // The card names the person the site names.
+  document.querySelector('.name').textContent = RECIPIENT.firstName;
+
+  document.getElementById('bunting').append(bunting(1200));
+
+  // The cake, and the candle the page draws as its own element.
+  const cakeLayer = document.getElementById('cake');
+  cakeLayer.append(cake(220));
+
+  const candle = document.createElement('div');
+  candle.className = 'candle';
+  const flameWrap = document.createElement('span');
+  flameWrap.className = 'candle__flame-wrap';
+  flameWrap.append(flame(30));
+  const stick = document.createElement('span');
+  stick.className = 'candle__stick';
+  candle.append(flameWrap, stick);
+  cakeLayer.append(candle);
+
+  const BALLOON_FILLS = ['#F4DDE1', '#E8C5CB', '#FFF9F4'];
+  // Each bunch puts its tallest balloon nearest the cake, so the two bunches
+  // mirror each other across it.
+  const BUNCHES = {
+    left: [58, 68, 80],
+    right: [80, 68, 58],
+  };
+
+  for (const side of ['left', 'right']) {
+    const row = document.getElementById(`balloons-${side}`);
+    BUNCHES[side].forEach((size, index) => {
+      row.append(balloon(size, BALLOON_FILLS[index % BALLOON_FILLS.length]));
+    });
+  }
+
+  // Confetti is placed by arithmetic, never at random: redrawing the card
+  // twice has to produce the same picture.
+  const CONFETTI = [
+    [86, 168], [148, 402], [212, 96], [268, 512], [318, 240], [372, 588],
+    [430, 132], [486, 470], [548, 74], [604, 556], [662, 196], [716, 350],
+    [772, 108], [828, 520], [884, 262], [938, 158], [992, 430], [1046, 92],
+    [1104, 336], [1152, 508], [62, 556], [396, 44], [742, 596], [1128, 224],
+    [156, 268], [1010, 596], [520, 330], [900, 588],
+  ];
+  const CONFETTI_COLOURS = ['#F4DDE1', '#E8C5CB', '#C58F99', '#F7EDE4'];
+
+  const confetti = document.getElementById('confetti');
+  CONFETTI.forEach(([x, y], index) => {
+    const piece = document.createElement('span');
+    piece.style.left = `${x}px`;
+    piece.style.top = `${y}px`;
+    piece.style.setProperty('--turn', `${(index * 47) % 360}deg`);
+    piece.style.background = CONFETTI_COLOURS[index % CONFETTI_COLOURS.length];
+    confetti.append(piece);
+  });
+
+  // The screenshot must never catch a half-painted card.
+  await document.fonts.ready;
+  document.documentElement.dataset.ready = 'true';
+</script>
+</body>
+</html>
