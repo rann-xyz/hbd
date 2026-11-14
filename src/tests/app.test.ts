@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { boot, sectionDefinitions, type BootedApp } from '../app';
 import { BUILT_SECTIONS, FOOT, RECIPIENT } from '../content';
+import { silentMusicBox, TUNE_REQUEST_EVENT, type MusicBox } from '../lib/music';
 
 /** The same shell index.html provides, minus the module script. */
 function shell(): void {
@@ -141,5 +142,43 @@ describe('accessibility of the shell', () => {
     for (const ornament of Array.from(ornaments)) {
       expect(ornament.getAttribute('aria-hidden')).toBe('true');
     }
+  });
+});
+
+describe('the tune the cake asks for', () => {
+  it('plays the music box when the cake asks for it', () => {
+    const play = vi.fn();
+    const box: MusicBox = {
+      available: true,
+      isPlaying: () => false,
+      play,
+      pause: vi.fn(),
+      toggle: () => false,
+      destroy: vi.fn(),
+    };
+    app = boot(undefined, { musicBox: box });
+
+    document.getElementById('wish')?.dispatchEvent(new CustomEvent(TUNE_REQUEST_EVENT, { bubbles: true }));
+
+    expect(play).toHaveBeenCalledTimes(1);
+  });
+
+  it('takes the ask off the page when there is no Web Audio to play into', () => {
+    app = boot(undefined, { musicBox: silentMusicBox() });
+    expect(document.getElementById('wish')?.getAttribute('data-tune')).toBe('off');
+  });
+
+  it('leaves the ask on the page when the music box is real', () => {
+    app = boot(undefined, {
+      musicBox: {
+        available: true,
+        isPlaying: () => false,
+        play: vi.fn(),
+        pause: vi.fn(),
+        toggle: () => false,
+        destroy: vi.fn(),
+      },
+    });
+    expect(document.getElementById('wish')?.hasAttribute('data-tune')).toBe(false);
   });
 });

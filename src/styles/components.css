@@ -875,7 +875,9 @@ body.is-letter-open {
 
 .candle {
   position: absolute;
-  top: 6%;
+  /* The art leaves the space above the top tier empty: the candle is a real
+     button sitting on the icing, not a decoration drawn into the cake. */
+  top: 0.5%;
   left: 50%;
   transform: translateX(-50%);
   display: grid;
@@ -988,6 +990,232 @@ body.is-letter-open {
 
 .cake__relight {
   justify-self: center;
+}
+
+/* ---------- The party around the cake ---------- */
+.cake__bunting {
+  width: min(100%, 30rem);
+  margin-bottom: calc(var(--s-2) * -1);
+}
+
+.cake__bunting-art {
+  display: block;
+  width: 100%;
+  height: auto;
+  opacity: 0.92;
+}
+
+/* Unfurls the moment the candle goes out. */
+.cake__banner {
+  margin: 0;
+  font-family: var(--font-hand);
+  font-size: clamp(1.5rem, 5.5vw, 2.15rem);
+  line-height: 1.1;
+  color: var(--rose-ink);
+  text-align: center;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(-8px) scale(0.94);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cake__banner {
+    transition:
+      opacity var(--dur) var(--ease-soft),
+      transform var(--dur) var(--ease-back),
+      visibility var(--dur);
+  }
+}
+
+.wish[data-celebrating] .cake__banner {
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+}
+
+.cake__party {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: var(--s-3);
+  margin-bottom: calc(var(--s-2) * -1);
+}
+
+.balloon {
+  display: grid;
+  place-items: center;
+  padding: 0.2rem;
+  border-radius: var(--radius-sm);
+}
+
+.balloon__art {
+  display: block;
+  transition:
+    opacity var(--dur) var(--ease-soft),
+    transform var(--dur) var(--ease-back);
+}
+
+.balloon:hover .balloon__art {
+  transform: translateY(-3px);
+}
+
+.balloon.is-popped .balloon__art {
+  opacity: 0.26;
+  transform: scale(0.86) translateY(7px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .wish[data-celebrating] .balloon:not(.is-popped) {
+    animation: balloon-sway 3.6s var(--ease-soft) infinite;
+  }
+
+  .wish[data-celebrating] .balloon:nth-child(2) {
+    animation-delay: 420ms;
+  }
+
+  .wish[data-celebrating] .balloon:nth-child(3) {
+    animation-delay: 860ms;
+  }
+
+  .balloon.is-popping {
+    animation: balloon-pop 420ms var(--ease-back);
+  }
+}
+
+@keyframes balloon-sway {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1.2deg);
+  }
+  50% {
+    transform: translateY(-7px) rotate(1.2deg);
+  }
+}
+
+@keyframes balloon-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.16);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* The line a balloon was holding. The space is reserved so the row never jumps. */
+.cake__slip {
+  min-height: 1.7em;
+  max-width: 34rem;
+  margin: 0;
+  text-align: center;
+  color: var(--cocoa-soft);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cake__slip.is-fresh {
+    animation: settle-pop 520ms var(--ease-back);
+  }
+}
+
+/* The slice only exists once the cake is cut. */
+.cake__gap,
+.cake__slice {
+  opacity: 0;
+}
+
+.cake__slice {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: translate(-18px, -14px) rotate(-12deg);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cake__gap,
+  .cake__slice {
+    transition:
+      opacity var(--dur) var(--ease-soft),
+      transform 900ms var(--ease-back);
+  }
+}
+
+.cake__stage.is-cut .cake__gap {
+  opacity: 1;
+}
+
+.cake__stage.is-cut .cake__slice {
+  opacity: 1;
+  transform: none;
+}
+
+.cake__note {
+  display: none;
+  max-width: 34rem;
+  margin: 0;
+  text-align: center;
+  color: var(--cocoa-soft);
+}
+
+.cake__stage.is-cut .cake__note {
+  display: block;
+}
+
+.cake__confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.cake__confetti-piece {
+  position: absolute;
+  top: -6%;
+  left: var(--x);
+  width: 7px;
+  height: 11px;
+  background: var(--colour);
+  border-radius: 1px;
+  opacity: 0;
+  animation: confetti-fall 2.8s var(--ease-soft) forwards;
+  animation-delay: calc(var(--i) * 45ms);
+}
+
+@keyframes confetti-fall {
+  0% {
+    opacity: 0;
+    transform: translateY(-12px) rotate(0deg);
+  }
+  8% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(430px) translateX(var(--drift)) rotate(var(--spin));
+  }
+}
+
+.cake__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--s-2);
+}
+
+/* Cutting and throwing again only make sense once the party has started. */
+.cake__cut,
+.cake__again {
+  display: none;
+}
+
+.wish[data-celebrating] .cake__cut,
+.wish[data-celebrating] .cake__again {
+  display: inline-flex;
+}
+
+/* No Web Audio in this runtime: the shell says so, and the ask goes away. */
+.wish[data-tune='off'] .cake__sing {
+  display: none;
 }
 
 /* ---------- Wish journal ---------- */

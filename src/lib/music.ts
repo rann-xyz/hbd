@@ -15,6 +15,13 @@ import { resolveStorage, type StorageLike } from './storage';
 
 export const MUSIC_PREFERENCE_KEY = 'hbd-fitria.music.v1';
 
+/**
+ * Fired by a section that wants the tune — the cake asks for it when the
+ * reader presses "sing it with me". The shell owns the music box, so the
+ * section asks rather than reaching for it.
+ */
+export const TUNE_REQUEST_EVENT = 'hbd:tune-request';
+
 /** Seconds per beat. A music box is unhurried; this is roughly 103 bpm. */
 export const BEAT_SECONDS = 0.58;
 

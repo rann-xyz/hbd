@@ -14,11 +14,18 @@ export interface PathSpec {
   readonly fillOpacity?: number;
 }
 
+export interface SvgGroupSpec {
+  /** Paths that move as one piece — a slice of cake, a lid, a flap. */
+  readonly className: string;
+  readonly paths: readonly PathSpec[];
+}
+
 export interface SvgSpec {
   readonly viewBox: string;
   readonly width: number;
   readonly height: number;
   readonly paths: readonly PathSpec[];
+  readonly groups?: readonly SvgGroupSpec[];
   readonly className?: string;
   readonly ariaHidden?: boolean;
   readonly label?: string;
@@ -57,6 +64,17 @@ export function svg(spec: SvgSpec): SVGSVGElement {
   for (const path of spec.paths) {
     const node = document.createElementNS(SVG_NS, 'path');
     applyPaint(node, path);
+    root.append(node);
+  }
+
+  for (const group of spec.groups ?? []) {
+    const node = document.createElementNS(SVG_NS, 'g');
+    node.setAttribute('class', group.className);
+    for (const path of group.paths) {
+      const child = document.createElementNS(SVG_NS, 'path');
+      applyPaint(child, path);
+      node.append(child);
+    }
     root.append(node);
   }
 
@@ -134,22 +152,102 @@ export function arrow(size = 18): SVGSVGElement {
   });
 }
 
-/** Hand-drawn birthday cake with a single candle. */
-export function cake(size = 220): SVGSVGElement {
+/**
+ * Hand-drawn birthday cake: two tiers, drip icing, cherries, sprinkles, a
+ * doily — and a slice that comes out of it. The slice and the gap it leaves
+ * behind are separate groups so the section can move one and reveal the
+ * other; nothing here is animated by the drawing itself.
+ */
+export function cake(size = 240): SVGSVGElement {
   return svg({
     viewBox: '0 0 120 120',
     width: size,
     height: size,
     className: 'cake__art',
     paths: [
-      { d: 'M25.5 78.4c-1 9.6-.6 19 .6 28.3 22.3 2.2 44.6 2.1 66.8-.4 1.3-9.2 1.6-18.5.9-27.9-22.8-3-45.4-2.6-68.3 0Z', fill: '#F7EDE4', stroke: '#C58F99', strokeWidth: 1.2 },
-      { d: 'M25.9 78.2c5.6-6.2 11.3-6.3 17.1-.4 5.8 5.8 11.5 5.7 17.2-.2 5.7-5.9 11.4-5.8 17.1.1 5.7 5.9 11.4 6 17.1.4 1.6 3.1 1.4 6.2-.4 9.3-22.5 2.6-45 2.7-67.6.4-1.9-3.1-2.1-6.3-.5-9.6Z', fill: '#F4DDE1', stroke: '#C58F99', strokeWidth: 1.1 },
-      { d: 'M33.4 66.1c-.7-8.6-.4-17.2.9-25.8 17.4-2.4 34.7-2.3 52 .3 1.1 8.5 1.4 17 .8 25.5-17.9-2.4-35.8-2.4-53.7 0Z', fill: '#FFF9F4', stroke: '#C58F99', strokeWidth: 1.2 },
-      { d: 'M34.2 65.6c4.6-5.4 9.2-5.5 13.9-.3 4.7 5.1 9.3 5 13.9-.3 4.6-5.3 9.2-5.4 13.9-.2 3.5 3.9 7 4.6 10.6 2.1 1.3 2.9 1.2 5.8-.2 8.7-17.5 2.3-34.9 2.3-52.4.1-1.5-2.9-1.7-5.8-.5-8.8Z', fill: '#F4DDE1', stroke: '#C58F99', strokeWidth: 1 },
-      { d: 'M59.6 40.4c-.6-6.4-.5-12.3.3-18.1', stroke: '#C58F99', strokeWidth: 1.6 },
-      { d: 'M59.3 21.4c-3.4-2.9-3.6-6.2-.5-8.7 2.9 2.7 3.1 5.7.5 8.7Z', fill: '#E8C5CB', stroke: '#C58F99', strokeWidth: 1 },
-      { d: 'M52.4 22.6c.1-.9.4-1.7 1-2.4M66.6 22.4c-.1-.9-.4-1.7-1-2.4', stroke: '#C58F99', strokeWidth: 0.9 },
-      { d: 'M40.6 88.4c12.9 1.4 25.7 1.3 38.6-.3M42.3 97.6c12 1.2 23.9 1.1 35.8-.3', stroke: '#E8C5CB', strokeWidth: 1.4 },
+      // Doily under everything.
+      { d: 'M10.6 111.4c16.4-3.6 32.8-5.4 49.2-5.4 16.4 0 32.8 1.8 49.2 5.4-16.4 4.2-32.8 6.3-49.2 6.3-16.4 0-32.8-2.1-49.2-6.3Z', fill: '#FFF9F4', stroke: '#C58F99', strokeWidth: 1.1 },
+      // Bottom tier.
+      { d: 'M20.8 72.6c-.9 12.8-.6 25.6.8 38.4 25.6 2.6 51.2 2.5 76.8-.4 1.3-12.4 1.6-24.9.9-37.4-26.1-3.1-52.2-2.8-78.5-.6Z', fill: '#F7EDE4', stroke: '#C58F99', strokeWidth: 1.2 },
+      // Icing dripping over the bottom tier.
+      { d: 'M21.2 72.4c6.3-6.5 12.6-6.6 19-.5 6.4 6.1 12.7 6 19-.1 6.3-6.1 12.6-6 19 .1 6.4 6.1 12.7 6.2 19 .4 1.8 4.2 1.6 8.4-.6 12.6-25.6 2.9-51.2 2.9-76.8.4-2.2-4.2-2.4-8.5-.6-12.9Z', fill: '#F4DDE1', stroke: '#C58F99', strokeWidth: 1.1 },
+      // Top tier.
+      { d: 'M35.2 44.4c-.8 9.4-.5 18.8.7 28.2 16.6 2.2 33.2 2.1 49.8-.3 1.2-9.2 1.5-18.3.8-27.5-17.1-2.6-34.2-2.7-51.3-.4Z', fill: '#FFF9F4', stroke: '#C58F99', strokeWidth: 1.2 },
+      // Icing on the top tier.
+      { d: 'M35.6 44.2c4.5-5.3 9-5.4 13.5-.4 4.5 5 9 4.9 13.5-.1 4.5-5 9-5.1 13.5-.1 2.3 2.5 4.5 3.4 6.8 2.7 1.4 3.4 1.2 6.8-.4 10.2-16.6 2.4-33.2 2.4-49.8.2-1.7-3.4-1.9-6.8-.6-10.4Z', fill: '#F4DDE1', stroke: '#C58F99', strokeWidth: 1 },
+      // Two cherries, kept clear of the candle.
+      { d: 'M45.8 53a3.2 3.2 0 1 0 6.4 0 3.2 3.2 0 1 0-6.4 0Z', fill: '#E8C5CB', stroke: '#C58F99', strokeWidth: 1 },
+      { d: 'M67.8 53a3.2 3.2 0 1 0 6.4 0 3.2 3.2 0 1 0-6.4 0Z', fill: '#E8C5CB', stroke: '#C58F99', strokeWidth: 1 },
+      { d: 'M49.6 49.8c.4-2 1.6-3.4 3.6-4.2M70.8 49.8c-.4-2-1.6-3.4-3.6-4.2', stroke: '#C58F99', strokeWidth: 0.9 },
+      // Sprinkles.
+      { d: 'M32.6 95.4c1.6-1.2 3.2-2.4 4.8-3.4M44.2 101.6c1.8-.8 3.6-1.6 5.4-2.2M58.6 92.4c1.4 1.4 2.8 2.6 4.2 3.8M70.4 100.2c1.8-.6 3.6-1.2 5.4-1.6M84.2 94.6c1.2 1.6 2.4 3 3.6 4.4M38.4 106.4c1.6-.6 3.2-1 4.8-1.4M76.6 106.8c1.4-.8 2.8-1.4 4.2-1.8', stroke: '#E8C5CB', strokeWidth: 1.6 },
+    ],
+    groups: [
+      {
+        className: 'cake__gap',
+        paths: [
+          { d: 'M81.2 74.2c-3.2 12.2-6.2 24.4-9.1 36.6 5.6.5 11.2.5 16.8 0-3-12.2-5.9-24.4-9.1-36.6Z', fill: '#E6CFC2', stroke: '#C58F99', strokeWidth: 1 },
+          { d: 'M78.4 88.4c2 .3 4 .3 6 0M75.2 99.2c4 .5 8 .5 12 0', stroke: '#FFF9F4', strokeWidth: 1.6 },
+        ],
+      },
+      {
+        className: 'cake__slice',
+        paths: [
+          { d: 'M92.4 101.2c6.2-1.8 12.4-2.4 18.6-1.8-.2 5.2-.9 10.4-2.1 15.6-6 1.4-12 1.4-18 0 .8-4.6 1.2-9.2 1.5-13.8Z', fill: '#F7EDE4', stroke: '#C58F99', strokeWidth: 1.1 },
+          { d: 'M92.6 101c6.2-2.4 12.4-3.2 18.6-2.4.4 2.6.2 5.2-.6 7.8-6 1.4-12 1.4-18 0-.4-1.8-.4-3.6 0-5.4Z', fill: '#F4DDE1', stroke: '#C58F99', strokeWidth: 1 },
+          { d: 'M98.6 105.4a2.4 2.4 0 1 0 4.8 0 2.4 2.4 0 1 0-4.8 0Z', fill: '#E8C5CB', stroke: '#C58F99', strokeWidth: 0.9 },
+        ],
+      },
+    ],
+  });
+}
+
+/** A sagging string of pennants, for the top of the party. */
+export function bunting(size = 320): SVGSVGElement {
+  const pennants: readonly { readonly x: number; readonly y: number; readonly fill: string }[] = [
+    { x: 22, y: 11.1, fill: '#F4DDE1' },
+    { x: 48, y: 14.7, fill: '#E8C5CB' },
+    { x: 74, y: 16.8, fill: '#FFF9F4' },
+    { x: 100, y: 17.4, fill: '#F4DDE1' },
+    { x: 126, y: 16.8, fill: '#E8C5CB' },
+    { x: 152, y: 14.7, fill: '#FFF9F4' },
+    { x: 178, y: 11.1, fill: '#F4DDE1' },
+  ];
+
+  const paths: PathSpec[] = [
+    { d: 'M3.4 7.6c32 6.6 64 9.9 96 9.9 32 0 64-3.3 96-9.9', stroke: '#C58F99', strokeWidth: 1.2 },
+  ];
+  for (const pennant of pennants) {
+    const { x, y } = pennant;
+    paths.push({
+      d: `M${x - 8.6} ${y}c0 0 5.4 13.4 8.6 17.4 3.2-4 8.6-17.4 8.6-17.4-5.8 1.4-11.4 1.4-17.2 0Z`,
+      fill: pennant.fill,
+      stroke: '#C58F99',
+      strokeWidth: 1,
+    });
+  }
+
+  return svg({
+    viewBox: '0 0 200 44',
+    width: size,
+    height: Math.round((size * 44) / 200),
+    className: 'cake__bunting-art',
+    paths,
+  });
+}
+
+/** One balloon on a string. Coloured by the caller so the bunch can vary. */
+export function balloon(size = 44, fill = '#F4DDE1'): SVGSVGElement {
+  return svg({
+    viewBox: '0 0 40 62',
+    width: size,
+    height: Math.round((size * 62) / 40),
+    className: 'balloon__art',
+    paths: [
+      { d: 'M20 2.8c8.2 0 14.4 6.6 14.4 15.2 0 9.4-8.2 17-14.4 19.2C13.8 35 5.6 27.4 5.6 18 5.6 9.4 11.8 2.8 20 2.8Z', fill, stroke: '#C58F99', strokeWidth: 1.2 },
+      { d: 'M13.6 12.4c-1.4 2.4-1.8 5-1.2 7.8', stroke: '#FFF9F4', strokeWidth: 1.6 },
+      { d: 'M17.6 37.8c1.6-1.4 3.2-1.4 4.8 0-1.6 1.8-3.2 1.8-4.8 0Z', fill: '#E8C5CB', stroke: '#C58F99', strokeWidth: 0.9 },
+      { d: 'M20 39.8c-2.8 6.6 2.8 12.6 0 19.2', stroke: '#C58F99', strokeWidth: 1 },
     ],
   });
 }

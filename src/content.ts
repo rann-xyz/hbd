@@ -171,6 +171,22 @@ export const CAKE = {
   wishPrompt: 'Now hold it in your head for a second before you let it go.',
   wishDone: 'Wish sent. Nothing to do now but wait for the year to be kind.',
   relight: 'Light it again',
+  /** Unfurls once the candle is out — the page throws the party itself. */
+  banner: 'Happy Birthday, Fitria',
+  cutLabel: 'Cut the cake',
+  cutAria: 'Cut the cake open',
+  cutStatus: 'Cut open. Whatever is inside is yours.',
+  cutNote:
+    'There is nothing here you can actually eat, so here is what I would have written on the plate: I hope this year gives you back everything you quietly hand to everyone else.',
+  singLabel: 'Sing it with me',
+  singAria: 'Play the birthday song',
+  againLabel: 'One more time',
+  againAria: 'Throw the confetti again',
+  balloons: [
+    { id: 'first', aria: 'Pop the first balloon', line: 'One more year of you being exactly this lovely.' },
+    { id: 'second', aria: 'Pop the second balloon', line: 'You are the best thing an ordinary year ever handed me.' },
+    { id: 'third', aria: 'Pop the third balloon', line: 'Whatever this year brings, you will not carry it alone.' },
+  ],
 } as const;
 
 export const JOURNAL = {

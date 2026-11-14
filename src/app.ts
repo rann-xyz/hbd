@@ -6,7 +6,7 @@
 
 import { BUILT_SECTIONS, COUNTDOWN_COPY, FOOT, RECIPIENT, navEntriesFor } from './content';
 import { clear, el, qs, setHidden, toggleClass } from './lib/dom';
-import { createMusicBox, shouldAutoStart, type MusicBox } from './lib/music';
+import { createMusicBox, shouldAutoStart, TUNE_REQUEST_EVENT, type MusicBox } from './lib/music';
 import { prefersReducedMotion, revealOnScroll, scrollToElement } from './lib/motion';
 import { sprig } from './lib/svg';
 import { buildCake } from './sections/cake';
@@ -295,6 +295,21 @@ export function boot(
     document.body.append(musicControl.element);
     teardown.push(() => musicControl?.destroy());
   }
+
+  // The cake asks for the tune instead of owning a player of its own. When
+  // there is no Web Audio to play into, the ask is taken off the page rather
+  // than left as a button that does nothing.
+  const wishSection = qs<HTMLElement>('#wish');
+  if (wishSection && !music.available) wishSection.setAttribute('data-tune', 'off');
+
+  const onTuneRequest = (): void => {
+    if (!music.available) return;
+    musicControl?.reveal();
+    music.play();
+    musicControl?.sync();
+  };
+  root.addEventListener(TUNE_REQUEST_EVENT, onTuneRequest);
+  teardown.push(() => root.removeEventListener(TUNE_REQUEST_EVENT, onTuneRequest));
 
   teardown.push(revealOnScroll(root, { stagger: 90 }));
 
