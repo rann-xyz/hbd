@@ -18,6 +18,11 @@ export const AUTHOR = {
 export const SITE = {
   title: 'Fitria — A Little World Made For You',
   description: 'A handmade digital birthday scrapbook for Fitria Cahaya Aulia, made by Agis.',
+  /** Where the site actually lives — used by the link preview tags in index.html. */
+  url: 'https://rann-xyz.github.io/hbd/',
+  /** The social card, relative to the site root. */
+  ogImage: 'assets/og-cover.png',
+  ogImageAlt: 'A handmade birthday card: Fitria — a little world made for you.',
 } as const;
 
 /** The one real photograph. Never regenerated, never altered, never cropped square. */
@@ -199,7 +204,7 @@ export const JOURNAL = {
   savedTitle: 'Saved',
   savedBody: 'Kept for you. Come back and read it whenever you want.',
   deviceNotice:
-    'Saved privately on this device only. Add Supabase keys in your environment to keep wishes in your own Postgres database instead.',
+    'Saved privately on this device only. These wishes stay in this browser and nowhere else — not even I can read them.',
   cloudNotice: 'Saved privately in your own database. Only you can read this.',
   localCountLabel: 'wishes kept on this device',
   localCountLabelOne: 'wish kept on this device',
