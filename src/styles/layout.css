@@ -1,0 +1,373 @@
+/* ============================================================
+   LAYOUT — editorial asymmetry on a 12-column grid
+   Sections are composed, not stacked: content sits off-centre,
+   photographs lean, whitespace carries the personality.
+   ============================================================ */
+
+.section {
+  position: relative;
+  z-index: var(--z-paper);
+  padding-block: var(--section-y);
+}
+
+.section--tight {
+  padding-block: clamp(2.5rem, 7vw, 4.5rem);
+}
+
+.section__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-2);
+  margin-bottom: var(--s-5);
+}
+
+/* Editorial grid for composed sections (portrait, letter, closing). */
+.spread {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(1.75rem, 6vw, 3.5rem);
+  align-items: center;
+}
+
+@media (min-width: 62rem) {
+  .spread {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: clamp(1.5rem, 3vw, 2.75rem);
+  }
+
+  .spread__text {
+    grid-column: 1 / span 5;
+  }
+
+  .spread__figure {
+    grid-column: 7 / span 6;
+  }
+
+  .spread--flip .spread__text {
+    grid-column: 8 / span 5;
+    order: 2;
+  }
+
+  .spread--flip .spread__figure {
+    grid-column: 1 / span 6;
+    order: 1;
+  }
+}
+
+/* Opening: a single full-height composed page. */
+.opening {
+  position: relative;
+  min-height: 100svh;
+  display: grid;
+  align-content: center;
+  padding-block: clamp(6rem, 16vh, 9rem) clamp(3rem, 9vh, 5rem);
+  overflow: hidden;
+}
+
+.opening__inner {
+  position: relative;
+  z-index: var(--z-paper);
+  max-width: min(46rem, 100%);
+}
+
+.opening__name {
+  margin-top: var(--s-3);
+}
+
+.opening__actions {
+  margin-top: var(--s-4);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3) var(--s-4);
+}
+
+/* Countdown: the digits get the widest measure on the page. */
+.countdown__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-3) var(--s-2);
+  margin-top: var(--s-4);
+  max-width: 34rem;
+}
+
+@media (min-width: 40rem) {
+  .countdown__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    max-width: 46rem;
+  }
+}
+
+.countdown__head {
+  max-width: 40rem;
+}
+
+.countdown__note {
+  margin-top: var(--s-4);
+}
+
+/* Portrait: figure leans, text holds the left column. */
+.portrait__figure {
+  justify-self: center;
+  width: min(30rem, 100%);
+}
+
+.portrait__lede {
+  max-width: 34rem;
+}
+
+/* The opening page's ornaments: pinned, crocked, never in the way. */
+.opening__orn {
+  position: absolute;
+  pointer-events: none;
+  color: var(--rose-ink);
+}
+
+.opening__orn--bow {
+  top: clamp(3rem, 12vh, 6.5rem);
+  right: clamp(1rem, 7vw, 4.5rem);
+  transform: rotate(-7deg);
+}
+
+.opening__orn--star-a {
+  top: clamp(6.5rem, 22vh, 11rem);
+  right: clamp(4rem, 20vw, 12rem);
+}
+
+.opening__orn--star-b {
+  bottom: clamp(4rem, 14vh, 7rem);
+  right: clamp(2rem, 12vw, 8rem);
+}
+
+.opening__orn--stamp {
+  position: absolute;
+  bottom: clamp(2rem, 8vh, 4.5rem);
+  right: clamp(1.25rem, 8vw, 5rem);
+}
+
+.opening__name {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(1.4rem, 4.6vw, 2.35rem);
+  line-height: 1.18;
+  letter-spacing: 0.004em;
+  color: var(--cocoa);
+}
+
+/* Countdown: celebration + afterword cards. */
+.celebration {
+  position: relative;
+  max-width: 36rem;
+  margin-top: var(--s-4);
+  padding: clamp(1.1rem, 3.4vw, 1.9rem);
+  background: var(--cream-warm);
+  border: var(--edge);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-paper);
+}
+
+.celebration[hidden],
+.afterword[hidden] {
+  display: none;
+}
+
+.celebration > * + * {
+  margin-top: 0.7rem;
+}
+
+.celebration__bow {
+  position: absolute;
+  top: -0.85rem;
+  right: 1.4rem;
+  transform: rotate(-8deg);
+}
+
+.afterword {
+  max-width: 38rem;
+  margin-top: var(--s-4);
+}
+
+.afterword > * + * {
+  margin-top: 0.7rem;
+}
+
+/* Portrait extras. */
+.portrait__figure {
+  position: relative;
+}
+
+.portrait__stamp {
+  bottom: -2.1rem;
+  left: -1.1rem;
+  transform: rotate(6deg);
+  z-index: 2;
+}
+
+.portrait__bow {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--s-5);
+  color: var(--rose-ink);
+}
+
+.portrait__signature {
+  margin-top: var(--s-3);
+}
+
+.site-foot__sprig {
+  display: inline-block;
+  margin-top: var(--s-2);
+  color: var(--rose-ink);
+}
+
+/* Once the surprise is opened the opening page settles back. */
+body.is-open .opening {
+  min-height: auto;
+  padding-block: clamp(4.5rem, 12vh, 7rem) clamp(1.5rem, 5vh, 2.5rem);
+}
+
+body.is-open .opening__orn--stamp {
+  opacity: 0.6;
+}
+
+/* Notes wall (phase 3) shares the editorial rhythm. */
+.notes__wall {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-3);
+}
+
+@media (min-width: 48rem) {
+  .notes__wall {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 72rem) {
+  .notes__wall {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .notes__wall > :first-child {
+    grid-column: span 2;
+  }
+}
+
+/* Journal (phase 4) */
+.journal__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-4);
+}
+
+@media (min-width: 62rem) {
+  .journal__layout {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    align-items: start;
+    gap: var(--s-5);
+  }
+}
+
+.wishes {
+  display: grid;
+  gap: var(--s-3);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 48rem) {
+  .wishes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Closing */
+.closing {
+  text-align: center;
+  padding-block: clamp(5rem, 14vw, 10rem);
+}
+
+.closing__inner {
+  max-width: 44rem;
+  margin-inline: auto;
+}
+
+.closing__figure {
+  width: min(22rem, 80%);
+  margin: var(--s-5) auto;
+}
+
+/* Closing — the last page settles quietly in the middle of the paper. */
+.closing__bloom {
+  display: flex;
+  justify-content: center;
+  gap: 0.9rem;
+  margin-bottom: var(--s-4);
+  color: var(--rose-ink);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .closing__bloom > svg {
+    animation: closing-twinkle 5.2s var(--ease-soft) infinite;
+  }
+
+  .closing__bloom > svg:nth-child(2) {
+    animation-delay: 0.7s;
+  }
+
+  .closing__bloom > svg:nth-child(3) {
+    animation-delay: 1.4s;
+  }
+}
+
+@keyframes closing-twinkle {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.96);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+.closing__heading {
+  margin-top: var(--s-2);
+}
+
+.closing__lines {
+  margin-top: var(--s-4);
+  margin-inline: auto;
+  text-wrap: balance;
+}
+
+/* Higher specificity than .polaroid, which is imported after this file. */
+.closing .closing__figure {
+  width: min(22rem, 82%);
+  margin: var(--s-5) auto;
+  transform: none;
+}
+
+.closing__signoff {
+  margin: var(--s-4) 0 0;
+  font-size: var(--t-small);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--cocoa-faint);
+}
+
+.closing__signature {
+  margin: 0.2rem 0 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(1.6rem, 5.4vw, 2.4rem);
+  line-height: 1.1;
+  color: var(--cocoa);
+}
+
+.closing__restart {
+  margin-top: var(--s-5);
+}

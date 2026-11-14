@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Fitria and Agis">
+  <rect width="64" height="64" rx="10" fill="#FFF9F4"/>
+  <rect x="3" y="3" width="58" height="58" rx="8" fill="none" stroke="#C58F99" stroke-opacity=".45" stroke-width="1"/>
+  <path d="M32 44c-6.4-4.6-12-9-12-15.2 0-4 3-7 6.8-7 2.4 0 4.2 1.2 5.2 3 1-1.8 2.8-3 5.2-3 3.8 0 6.8 3 6.8 7C44 35 38.4 39.4 32 44Z" fill="#E8C5CB" stroke="#8A5B66" stroke-width="1.2"/>
+  <path d="M22 18c3.4-2 6.8-2 10 0" fill="none" stroke="#C58F99" stroke-width="1.4" stroke-linecap="round"/>
+</svg>

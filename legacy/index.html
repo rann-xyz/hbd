@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>for fitri — still you.</title>
+<meta name="description" content="a little scrapbook for fitri, from agis.">
+<meta name="theme-color" content="#fde8ec">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollToPlugin.min.js"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="progress"><div id="progress-bar"></div></div>
+
+<audio id="bg-audio" preload="metadata" loop crossorigin="anonymous">
+  <source src="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/bb/13/17/bb131769-c591-3027-b0f2-cb9bb1364a35/mzaf_3957673917538624485.plus.aac.p.m4a" type="audio/mp4">
+</audio>
+<div id="yt-wrap" aria-hidden="true" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden"><div id="yt-player"></div></div>
+
+<nav id="nav">
+  <a class="nav-logo" href="#hero">fitri — agis <span class="logo-heart">♡</span></a>
+  <button id="music-btn" class="music-player" aria-label="play Begin Again">
+    <span class="vinyl">💿</span>
+    <span class="music-meta"><span class="mtitle">Begin Again</span><span class="martist">Taylor Swift</span></span>
+    <span class="mctrl"><span class="ico-play">▸</span><span class="ico-pause">❚❚</span></span>
+  </button>
+</nav>
+
+<div id="loader">
+  <div class="loader-inner">
+    <div class="loader-bow" aria-hidden="true">
+      <svg viewBox="0 0 64 28" width="64" height="28"><path d="M32 14 C 22 2, 6 6, 12 16 C 6 26, 22 30, 32 14 C 42 30, 58 26, 52 16 C 58 6, 42 2, 32 14 Z" fill="#f8a6be" stroke="#c9405e" stroke-width="1.2"/><circle cx="32" cy="14" r="5" fill="#c9405e"/></svg>
+    </div>
+    <p class="loader-text">opening your scrapbook...</p>
+    <div class="loader-line"><span></span></div>
+  </div>
+  <canvas id="loader-canvas" aria-hidden="true"></canvas>
+</div>
+
+<!-- HERO — scrapbook first page -->
+<section id="hero">
+  <canvas id="hero-canvas" aria-hidden="true"></canvas>
+  <div class="hero-paper">
+    <div class="hero-sticker s-bow" aria-hidden="true">
+      <svg viewBox="0 0 64 28" width="52" height="22"><path d="M32 14 C 22 2, 6 6, 12 16 C 6 26, 22 30, 32 14 C 42 30, 58 26, 52 16 C 58 6, 42 2, 32 14 Z" fill="#f8a6be" stroke="#b83a52" stroke-width="1.1"/><circle cx="32" cy="14" r="4.5" fill="#b83a52"/></svg>
+    </div>
+    <span class="hero-sparkle sp1" aria-hidden="true">✦</span>
+    <span class="hero-sparkle sp2" aria-hidden="true">✦</span>
+    <span class="hero-mini-heart" aria-hidden="true">♡</span>
+
+    <p class="eyebrow">a tiny scrapbook, just for you <span class="eyebrow-heart">♡</span></p>
+    <h1 class="hero-title">for<br><i>my favorite</i><br>person</h1>
+    <p class="hero-sub">still you. always you.</p>
+
+    <div class="hero-polaroid" aria-hidden="true">
+      <div class="hp-wrap"><img src="https://i.ibb.co.com/939h9hx0/IMG-20261006-013841-152.jpg" alt=""></div>
+      <span class="hp-tape"></span>
+      <span class="hp-caption">you ♡</span>
+    </div>
+
+    <button id="enter-btn" class="cta">open my heart ♡</button>
+    <p class="hero-note">handmade with love by agis</p>
+  </div>
+  <button class="scroll-hint" aria-label="scroll" data-scroll="#story"><span></span></button>
+</section>
+
+<!-- VIDEO -->
+<section id="video-sec">
+  <div class="video-frame">
+    <video id="bg-video" autoplay muted loop playsinline>
+      <source src="https://cdn.coverr.co/videos/coverr-sunset-over-the-sea-1578612799086?download=1" type="video/mp4">
+    </video>
+    <div class="video-dim"></div>
+  </div>
+  <div class="video-copy">
+    <p class="eyebrow light">begin again — red (taylor's version)</p>
+    <h2>a moment<br><i>frozen in time</i></h2>
+    <span class="video-bow" aria-hidden="true"><svg viewBox="0 0 32 14" width="26" height="11"><path d="M16 7 C 10 1, 2 3, 6 7 C 2 11, 10 13, 16 7 C 22 13, 30 11, 26 7 C 30 3, 22 1, 16 7 Z" fill="rgba(248,166,190,.85)" stroke="rgba(201,64,94,.35)" stroke-width=".7"/><circle cx="16" cy="7" r="2.3" fill="rgba(201,64,94,.55)"/></svg></span>
+  </div>
+</section>
+<div class="heart-divider" aria-hidden="true"><span>♡</span></div>
+
+<!-- STORY -->
+<section id="story" class="section">
+  <div class="section-head">
+    <p class="eyebrow">our story</p>
+    <h2>how we <i>got here</i></h2>
+  </div>
+  <div class="timeline">
+    <div class="tl-line" aria-hidden="true"><span></span></div>
+    <article class="tl-card"><span class="num">01</span><h3>the beginning</h3><p>one notification. one reply that stayed a little longer than it should have.</p><span class="meta">— where it all quietly started</span><span class="tl-doodle">♡</span></article>
+    <article class="tl-card"><span class="num">02</span><h3>the first conversation</h3><p>laughing at nothing, talking about everything — like we'd known the rhythm before.</p><span class="meta">— and time forgot to move</span><span class="tl-doodle">✦</span></article>
+    <article class="tl-card"><span class="num">03</span><h3>the little moments</h3><p>ordinary days that felt different just because you were in them.</p><span class="meta">— coffee, late chats, soft silences</span><span class="tl-doodle">☁</span></article>
+    <article class="tl-card"><span class="num">04</span><h3>today</h3><p>still choosing you. still finding new reasons to.</p><span class="meta">— and tomorrow, again</span><span class="tl-doodle">♥</span></article>
+  </div>
+</section>
+<div class="heart-divider" aria-hidden="true"><span>♡</span></div>
+
+<!-- MEMORIES — scrapbook curated -->
+<section id="memories" class="section">
+  <div class="section-head">
+    <p class="eyebrow">memories</p>
+    <h2>little pieces <i>i keep</i></h2>
+    <p class="sub">twenty-one tiny frames — all you, all loved ♡</p>
+  </div>
+
+  <!-- featured -->
+  <figure class="feature">
+    <div class="f-wrap"><img loading="lazy" src="https://i.ibb.co.com/939h9hx0/IMG-20261006-013841-152.jpg" alt="fitri featured"></div>
+    <span class="f-tape"></span>
+    <span class="f-sticker s1" aria-hidden="true">🎀</span>
+    <figcaption>my favorite view — you <span>♡</span></figcaption>
+  </figure>
+
+  <div class="scrap-grid">
+    <figure class="snap r1 v-paper"><div class="snap-photo"><img loading="lazy" src="https://i.ibb.co.com/VpS17Ps0/IMG-20261006-013836-638.jpg" alt="fitri 2"></div><span class="sticker" style="--r:-6deg">🧸</span><span class="snap-tape"></span><figcaption>laugh — the sound i keep</figcaption></figure>
+    <figure class="snap r2 v-polaroid"><div class="snap-photo"><img loading="lazy" src="https://i.ibb.co.com/Z6f80x6t/IMG-20261006-013840-882.jpg" alt="fitri 3"></div><span class="sticker" style="--r:4deg">🌸</span><span class="snap-tape t2"></span><figcaption>soft light — you, without trying</figcaption></figure>
+    <div class="note n1">one of my favorite memories <span>✦</span></div>
+    <figure class="snap r3 v-soft"><div class="snap-photo"><img loading="lazy" src="https://i.ibb.co.com/fVhfnp6P/IMG-20261006-013836-179.jpg" alt="fitri 4"></div><span class="sticker" style="--r:-4deg">✨</span><figcaption>little joy — ordinary, but you</figcaption></figure>
+    <figure class="snap r1 v-tape"><div class="snap-photo"><img loading="lazy" src="https://i.ibb.co.com/9dJkRyQ/IMG-20261006-013836-387.jpg" alt="fitri 5"></div><span class="sticker" style="--r:5deg">💌</span><figcaption>cozy — home was a feeling</figcaption></figure>
+    <figure class="snap r2 v-heart"><div class="snap-photo"><img loading="lazy" src="https://i.ibb.co.com/dsV5zdRB/IMG-20261006-013836-241.jpg" alt="fitri 6"></div><span class="sticker" style="--r:-5deg">🫶</span><figcaption>glow — my little star</figcaption></figure>
+    <figure class="snap r3 v-paper"><div class="snap-photo"><img loading="lazy" src="https://i.ibb.co.com/j9VP93r4/IMG-20261006-013836-826.jpg" alt="fitri 7"></div><span class="sticker" style="--r:3deg">🍓</span><figcaption>sweet — you're precious</figcaption></figure>
+    <div class="note n2">you feel like home <span>♡</span></div>
+    <figure class="snap r1 v-polaroid"><div class="snap-photo"><img loading="lazy" src="https://i.ibb.co.com/Kp2pnXsh/IMG-20261006-013836-670.jpg" alt="fitri 8"></div><span class="sticker" style="--r:-3deg">🐰</span><figcaption>calm — quiet magic</figcaption></figure>
+    <figure class="snap r2 v-soft"><div class="snap-photo"><img loading="lazy" src="https://i.ibb.co.com/8Ln9sV14/IMG-20261006-013836-508.jpg" alt="fitri 9"></div><span class="sticker" style="--r:6deg">🥺</span><figcaption>smile — the one i wait for</figcaption></figure>
+    <figure class="snap r3 v-tape"><div class="snap-photo"><img loading="lazy" src="https://i.ibb.co.com/Vpxpkmt5/IMG-20261006-013836-113.jpg" alt="fitri 10"></div><span class="sticker" style="--r:-4deg">💘</span><figcaption>precious — still you</figcaption></figure>
+    <figure class="snap r1 v-paper"><div class="snap-photo"><img loading="lazy" src="https://i.ibb.co.com/My83j8F9/IMG-20261006-013829-514.jpg" alt="fitri 11"></div><span class="sticker" style="--r:5deg">🌙</span><figcaption>beautiful — in every light</figcaption></figure>
+    <figure class="snap r2 v-heart"><div class="snap-photo"><img loading="lazy" src="https://i.ibb.co.com/rfdm1YCJ/IMG-20261006-013836-240.jpg" alt="fitri 12"></div><span class="sticker" style="--r:-6deg">☁️</span><figcaption>tender — soft & honest</figcaption></figure>
+    <div class="note n3">every angle, still you <span>✦</span></div>
+    <figure class="snap r3 v-polaroid"><div class="snap-photo"><img loading="lazy" src="https://i.ibb.co.com/3mfC3Td4/IMG-20261006-013829-982.jpg" alt="fitri 13"></div><span class="sticker" style="--r:4deg">🐾</span><figcaption>my muse — every angle</figcaption></figure>
+    <figure class="snap r1 v-soft"><div class="snap-photo"><img loading="lazy" src="https://i.ibb.co.com/F4p1zwZH/IMG-20261006-013829-265.jpg" alt="fitri 14"></div><span class="sticker" style="--r:-5deg">🍒</span><figcaption>bloom — like spring</figcaption></figure>
+    <figure class="snap r2 v-paper"><div class="snap-photo"><img loading="lazy" src="https://i.ibb.co.com/6cDGnkCD/IMG-20261006-013829-702.jpg" alt="fitri 15"></div><span class="sticker" style="--r:3deg">🧁</span><figcaption>angel — my favorite</figcaption></figure>
+    <figure class="snap r3 v-tape"><div class="snap-photo"><img loading="lazy" src="https://i.ibb.co.com/RkvjTF61/IMG-20261006-013829-708.jpg" alt="fitri 16"></div><span class="sticker" style="--r:-4deg">💝</span><figcaption>dream — you, you, you</figcaption></figure>
+    <figure class="snap r1 v-heart"><div class="snap-photo"><img loading="lazy" src="https://i.ibb.co.com/wr7tHP1g/IMG-20261006-013829-433.jpg" alt="fitri 17"></div><span class="sticker" style="--r:6deg">🌷</span><figcaption>pure — just you</figcaption></figure>
+    <figure class="snap r2 v-polaroid"><div class="snap-photo"><img loading="lazy" src="https://i.ibb.co.com/Zzf5dHRH/IMG-20261006-013829-390.jpg" alt="fitri 18"></div><span class="sticker" style="--r:-3deg">⭐</span><figcaption>glow II — still my star</figcaption></figure>
+    <figure class="snap r3 v-paper"><div class="snap-photo"><img loading="lazy" src="https://i.ibb.co.com/5gnYR4t6/IMG-20261006-013829-041.jpg" alt="fitri 19"></div><span class="sticker" style="--r:5deg">🍑</span><figcaption>serene — peace in you</figcaption></figure>
+    <figure class="snap r1 v-soft"><div class="snap-photo"><img loading="lazy" src="https://i.ibb.co.com/4RnhRf9M/IMG-20261006-013829-239.jpg" alt="fitri 20"></div><span class="sticker" style="--r:-6deg">🎀</span><figcaption>forever — always you</figcaption></figure>
+    <figure class="snap r2 v-tape"><div class="snap-photo"><img loading="lazy" src="https://i.ibb.co.com/d4rV3Vy1/IMG-20261006-013829-379.jpg" alt="fitri 21"></div><span class="sticker" style="--r:4deg">🧸</span><figcaption>mine — my fitri</figcaption></figure>
+  </div>
+</section>
+<div class="heart-divider" aria-hidden="true"><span>♡</span></div>
+
+<!-- LETTER -->
+<section id="letter" class="section">
+  <div class="section-head">
+    <p class="eyebrow">a letter</p>
+    <h2>words i <i>never said</i> aloud</h2>
+    <p class="sub">psst... i wrote you something ♡</p>
+  </div>
+  <div id="envelope-wrap">
+    <button id="envelope" aria-label="open letter">
+      <div class="env-body">
+        <div class="env-flap"></div>
+        <div class="env-front"></div>
+        <div class="env-paper"></div>
+        <span class="env-seal">♥</span>
+        <span class="env-bow" aria-hidden="true">
+          <svg viewBox="0 0 32 14" width="28" height="12"><path d="M16 7 C 10 1, 2 3, 6 7 C 2 11, 10 13, 16 7 C 22 13, 30 11, 26 7 C 30 3, 22 1, 16 7 Z" fill="#f8a6be" stroke="#c9405e" stroke-width=".9"/><circle cx="16" cy="7" r="2.8" fill="#c9405e"/></svg>
+        </span>
+      </div>
+      <span class="env-hint">open it, pretty please ♡</span>
+    </button>
+  </div>
+  <div id="letter-modal" aria-hidden="true">
+    <div class="letter-backdrop"></div>
+    <div class="letter-paper">
+      <button id="letter-close" aria-label="close">×</button>
+      <p class="letter-head">Dear Fitri,</p>
+      <div id="typed-letter"></div>
+      <p class="letter-sign">— Agis <span>♥</span></p>
+      <p class="letter-ps">p.s. you're my favorite notification ♡</p>
+    </div>
+  </div>
+</section>
+<div class="heart-divider" aria-hidden="true"><span>♡</span></div>
+
+<!-- WHY YOU -->
+<section id="why" class="section">
+  <div class="section-head">
+    <p class="eyebrow">why you</p>
+    <h2>simple reasons,<br><i>endless meaning</i></h2>
+  </div>
+  <div class="why-grid">
+    <div class="why-card"><span class="why-icon">☺</span><h3>your smile</h3><p>the kind that makes a room feel warmer without trying.</p></div>
+    <div class="why-card"><span class="why-icon">✦</span><h3>your personality</h3><p>soft, honest, a little stubborn — exactly how i like it.</p></div>
+    <div class="why-card"><span class="why-icon">◐</span><h3>how you make ordinary<br>moments special</h3><p>you turn waiting, walking, nothing — into something.</p></div>
+    <div class="why-card"><span class="why-icon">♥</span><h3>simply because<br>you're you</h3><p>no reason needed. just you.</p></div>
+  </div>
+</section>
+
+<!-- SURPRISE — gift box -->
+<section id="surprise">
+  <canvas id="surprise-canvas" aria-hidden="true"></canvas>
+  <canvas id="confetti-canvas" aria-hidden="true"></canvas>
+  <div class="surprise-flash" aria-hidden="true"></div>
+  <div class="surprise-inner">
+    <p class="eyebrow">a teeny tiny surprise ♡</p>
+    <h2 class="surprise-wait">close your eyes<br><i>and open your heart...</i></h2>
+    <p class="surprise-sub">i've been saving this one just for you, cutie ♡</p>
+
+    <div id="gift-wrap">
+      <button id="gift-box" aria-label="open gift">
+        <span class="gift-shadow"></span>
+        <span class="gift-bottom"></span>
+        <span class="gift-lid"><span class="ribbon-h"></span><span class="ribbon-v"></span><span class="bow"><svg viewBox="0 0 44 18" width="44" height="18"><path d="M22 9 C 14 1, 4 3, 8 9 C 4 15, 14 17, 22 9 C 30 17, 40 15, 36 9 C 40 3, 30 1, 22 9 Z" fill="#f8a6be" stroke="#c9405e" stroke-width="1"/><circle cx="22" cy="9" r="3.5" fill="#c9405e"/></svg></span></span>
+      </button>
+      <p class="gift-hint">psst... don't peek yet ♡ — tap to unwrap!</p>
+    </div>
+
+    <div id="surprise-reveal" aria-hidden="true">
+      <p class="reveal-line">i packed every little moment</p>
+      <p class="reveal-name">that made me fall for you ♡</p>
+      <figure class="reveal-photo"><div class="rp-wrap"><img src="https://i.ibb.co.com/8Ln9sV14/IMG-20261006-013836-508.jpg" alt="fitri"></div><span class="rp-tape"></span><figcaption>still you. always you. ♡</figcaption></figure>
+      <p class="reveal-cute">you're my favorite hello and my hardest goodbye ♡</p>
+      <p class="reveal-extra">every day with you is my favorite day — love you more, pretty girl ♡</p>
+    </div>
+
+    <!-- alternative choose one -->
+    <div id="choose" aria-hidden="true">
+      <p class="choose-title">pick a little heart ♡</p>
+      <div class="choose-grid">
+        <button class="choose-btn" data-choose="memory">✦ a memory</button>
+        <button class="choose-btn" data-choose="reason">♡ a reason</button>
+        <button class="choose-btn" data-choose="secret">✦ a secret</button>
+      </div>
+      <div id="choose-out"></div>
+    </div>
+  </div>
+</section>
+
+<!-- EASTER EGG -->
+<section id="love-meter" class="section">
+  <div class="meter-card">
+    <h3>how much do i adore you?</h3>
+    <div class="meter-row">
+      <input id="meter" type="range" min="0" max="5" value="2" step="1" aria-label="how much">
+      <span id="meter-val">100%</span>
+    </div>
+    <p id="meter-msg">that's just the beginning, cutie ♡</p>
+  </div>
+</section>
+
+<!-- FINAL — last page scrapbook -->
+<section id="final">
+  <canvas id="final-canvas" aria-hidden="true"></canvas>
+  <div class="final-paper">
+    <span class="final-bow" aria-hidden="true"><svg viewBox="0 0 64 28" width="44" height="18"><path d="M32 14 C 22 2, 6 6, 12 16 C 6 26, 22 30, 32 14 C 42 30, 58 26, 52 16 C 58 6, 42 2, 32 14 Z" fill="#f8a6be" stroke="#c9405e" stroke-width="1.1"/><circle cx="32" cy="14" r="4.5" fill="#c9405e"/></svg></span>
+    <p class="eyebrow">and if you ever wonder...</p>
+    <h2>yes.<br><i>i'd choose you</i><br>again.</h2>
+    <figure class="final-photo"><div class="fp-wrap"><img src="https://i.ibb.co.com/d4rV3Vy1/IMG-20261006-013829-379.jpg" alt="fitri final"></div><span class="fp-tape"></span><figcaption>my fitri — forever ♡</figcaption></figure>
+    <p class="final-note">out of everyone in this world, i'd still choose you.</p>
+    <button id="restart-btn" class="cta">start again ♡</button>
+    <p class="foot">made with love — by Agis</p>
+  </div>
+</section>
+
+<footer id="foot">© for fitri — <span id="year"></span> <span class="foot-heart">♡</span></footer>
+<script src="https://www.youtube.com/iframe_api"></script>
+<script type="module" src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+/* ============================================================
+   DESIGN TOKENS — "Cute Romantic Editorial Scrapbook"
+   One place for colour, type, rhythm, depth and motion.
+   No component hard-codes a raw value that belongs here.
+   ============================================================ */
+
+:root {
+  /* ---- Palette (the given six, plus a few derived inks) ---- */
+  --cream:        #FFF9F4;
+  --blush:        #F4DDE1;
+  --dusty-rose:   #C58F99;
+  --cocoa:        #513A40;
+  --muted-pink:   #E8C5CB;
+  --soft-white:   #FFFFFF;
+
+  /* Derived — paper depth, quiet rules, pencil marks */
+  --cream-deep:   #F7EDE4;
+  --cream-warm:   #FBF1E9;
+  --blush-deep:   #EBCBD2;
+  --cocoa-soft:   #6B4F56;
+  --cocoa-faint:  rgba(81, 58, 64, 0.42);
+  --cocoa-hair:   rgba(81, 58, 64, 0.14);
+  --cocoa-veil:   rgba(81, 58, 64, 0.06);
+  --rose-ink:     rgba(197, 143, 153, 0.55);
+
+  /* Focus + state inks (all readable on cream) */
+  --focus:        #8A5B66;
+  --ink-error:    #8C3B4A;
+  --ink-success:  #4F6B52;
+
+  /* ---- Type ---- */
+  --font-display: 'Cormorant Garamond', 'Iowan Old Style', 'Times New Roman', serif;
+  --font-body:    'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-hand:    'Caveat', 'Segoe Script', 'Bradley Hand', cursive;
+
+  --tracking-eyebrow: 0.34em;
+  --tracking-button:  0.16em;
+
+  /* Fluid scale — nothing jumps between breakpoints */
+  --t-hero:    clamp(2.45rem, 10.4vw, 6.75rem);
+  --t-h2:      clamp(1.7rem, 5vw, 3.25rem);
+  --t-h3:      clamp(1.24rem, 3.2vw, 1.8rem);
+  --t-lead:    clamp(1.02rem, 2.6vw, 1.2rem);
+  --t-body:    clamp(0.97rem, 2.4vw, 1.06rem);
+  --t-small:   clamp(0.78rem, 2vw, 0.86rem);
+  --t-eyebrow: clamp(0.62rem, 1.7vw, 0.72rem);
+  --t-hand:    clamp(1.1rem, 3.2vw, 1.55rem);
+  --t-digit:   clamp(2.1rem, 8.4vw, 4.4rem);
+
+  --leading-display: 0.97;
+  --leading-body:    1.72;
+
+  /* ---- Space ---- */
+  --s-1: 0.5rem;
+  --s-2: 1rem;
+  --s-3: 1.5rem;
+  --s-4: 2.5rem;
+  --s-5: 4rem;
+  --s-6: 6.5rem;
+  --gutter: clamp(1.15rem, 5vw, 3.25rem);
+  --section-y: clamp(4rem, 11vw, 8.5rem);
+  --measure: 60ch;
+  --page-max: 1180px;
+
+  /* ---- Depth: paper, never glass ---- */
+  --shadow-paper: 0 1px 2px rgba(81, 58, 64, 0.05), 0 8px 24px -12px rgba(81, 58, 64, 0.18);
+  --shadow-lift:  0 2px 4px rgba(81, 58, 64, 0.06), 0 18px 40px -18px rgba(81, 58, 64, 0.26);
+  --shadow-tape:  0 1px 3px rgba(81, 58, 64, 0.12);
+  --edge:         1px solid var(--cocoa-hair);
+
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius-md: 6px;
+
+  /* ---- Ornament ---- */
+  --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.42'/%3E%3C/svg%3E");
+  --noise-soft: 0.05;
+  --noise-strong: 0.085;
+
+  /* ---- Motion ---- */
+  --ease-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-back: cubic-bezier(0.34, 1.42, 0.64, 1);
+  --ease-ink:  cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast:  180ms;
+  --dur:       420ms;
+  --dur-slow:  900ms;
+  --stagger:   90ms;
+
+  /* ---- Layers ---- */
+  --z-paper: 1;
+  --z-nav: 40;
+  --z-progress: 60;
+  --z-modal: 80;
+}
+
+/* Respect the reader: every duration collapses. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 1ms;
+    --dur: 1ms;
+    --dur-slow: 1ms;
+    --stagger: 0ms;
+  }
+}
