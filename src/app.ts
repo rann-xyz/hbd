@@ -157,15 +157,52 @@ function trackActiveSection(links: readonly HTMLAnchorElement[], sections: reado
 
   if (typeof IntersectionObserver === 'undefined') return () => {};
 
+  // A ratio threshold cannot work here: the observation band is only ~20% of
+  // the viewport while the tallest sections are taller than the window, so
+  // their intersection ratio never reaches a high threshold and they would
+  // never be reported. Track plain overlap (threshold 0) and let the reading
+  // line — a third of the way down the viewport — pick the current section.
+  const visible = new Set<Element>();
+
+  const pick = (): HTMLElement | null => {
+    const line = window.innerHeight * 0.35;
+    let best: HTMLElement | null = null;
+    let bestDistance = Number.POSITIVE_INFINITY;
+
+    for (const section of sections) {
+      if (!visible.has(section)) continue;
+      const rect = section.getBoundingClientRect();
+      const distance =
+        rect.top <= line && rect.bottom > line
+          ? 0
+          : Math.min(Math.abs(rect.top - line), Math.abs(rect.bottom - line));
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = section;
+      }
+    }
+
+    return best;
+  };
+
+  const sync = (): void => {
+    // At the very bottom the reading line can sit in the footer, where no
+    // section overlaps the band any more: the last section is the answer.
+    const atBottom =
+      window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+    const target = atBottom ? sections[sections.length - 1] : pick();
+    if (target?.id) setActive(target.id);
+  };
+
   const observer = new IntersectionObserver(
     (entries) => {
-      const visible = entries
-        .filter((entry) => entry.isIntersecting)
-        .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-      const top = visible[0];
-      if (top) setActive((top.target as HTMLElement).id);
+      for (const entry of entries) {
+        if (entry.isIntersecting) visible.add(entry.target);
+        else visible.delete(entry.target);
+      }
+      sync();
     },
-    { rootMargin: '-30% 0px -50% 0px', threshold: [0.2, 0.5, 0.8] },
+    { rootMargin: '-30% 0px -50% 0px', threshold: 0 },
   );
 
   for (const section of sections) observer.observe(section);

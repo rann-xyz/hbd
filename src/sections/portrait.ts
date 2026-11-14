@@ -71,7 +71,7 @@ export function buildPortrait(): HTMLElement {
   });
 
   const figure = el('figure', {
-    className: 'polaroid polaroid--lift-right portrait__figure',
+    className: 'polaroid polaroid--lift-right spread__figure portrait__figure',
     attrs: { 'data-reveal': '' },
     children: [
       el('div', { className: 'polaroid__frame', children: [image] }),
