@@ -194,19 +194,44 @@ function trackActiveSection(links: readonly HTMLAnchorElement[], sections: reado
     if (target?.id) setActive(target.id);
   };
 
+  // The visible set only changes when a section crosses the observation band,
+  // but which section holds the reading line changes on every scroll frame —
+  // including while the set stays the same. Two sections share the band
+  // whenever one is taller than the window, so the last intersection event
+  // alone leaves the highlight a section behind; smooth scrolling makes it
+  // worse by settling on a position that fires no further event at all. Drive
+  // the pick from scroll frames too, the way the progress rail does.
+  let frame = 0;
+  const schedule = (): void => {
+    if (frame !== 0) return;
+    frame = window.requestAnimationFrame(() => {
+      frame = 0;
+      sync();
+    });
+  };
+
   const observer = new IntersectionObserver(
     (entries) => {
       for (const entry of entries) {
         if (entry.isIntersecting) visible.add(entry.target);
         else visible.delete(entry.target);
       }
-      sync();
+      schedule();
     },
     { rootMargin: '-30% 0px -50% 0px', threshold: 0 },
   );
 
   for (const section of sections) observer.observe(section);
-  return () => observer.disconnect();
+
+  window.addEventListener('scroll', schedule, { passive: true });
+  window.addEventListener('resize', schedule, { passive: true });
+
+  return () => {
+    observer.disconnect();
+    window.removeEventListener('scroll', schedule);
+    window.removeEventListener('resize', schedule);
+    if (frame !== 0) window.cancelAnimationFrame(frame);
+  };
 }
 
 export interface BootedApp {
