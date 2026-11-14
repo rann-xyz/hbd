@@ -3,6 +3,9 @@
 --  Run this once in the Supabase SQL editor, then put the project
 --  URL and the ANON key in .env.local (never the service_role key).
 --
+--  Already set up an earlier version? Run the migration at the
+--  bottom of this file instead of the whole thing.
+--
 --  Privacy model
 --  -------------
 --  A wish belongs to the device that wrote it. The browser keeps a
@@ -25,12 +28,10 @@ create table if not exists public.wishes (
   created_at        timestamptz not null default now(),
   title             text not null,
   description       text not null,
-  category          text not null,
   owner_token_hash  text not null,
 
   constraint wishes_title_length       check (char_length(title) between 2 and 80),
   constraint wishes_description_length check (char_length(description) between 4 and 600),
-  constraint wishes_category_known     check (category in ('dream', 'travel', 'self', 'us', 'little-things')),
   constraint wishes_token_is_a_hash    check (owner_token_hash ~ '^[0-9a-f]{64}$')
 );
 
@@ -107,3 +108,12 @@ revoke all on public.wishes from public;
 --  select * from public.wishes;
 --  -> anon sees nothing without the matching device token header.
 -- ------------------------------------------------------------
+
+-- ------------------------------------------------------------
+--  MIGRATION — only if you already ran an earlier version
+--  The wish form no longer asks for a category, so the column and
+--  its CHECK constraint go away. Existing rows keep their title and
+--  description; the site reads only those two fields.
+-- ------------------------------------------------------------
+-- alter table public.wishes drop constraint if exists wishes_category_known;
+-- alter table public.wishes drop column if exists category;

@@ -23,7 +23,7 @@ function fakeStorage(seed: Record<string, string> = {}): StorageLike & { dump():
   };
 }
 
-const VALID_INPUT = { title: 'See the sea', description: 'Somewhere warm, with nowhere to be.', category: 'travel' as const };
+const VALID_INPUT = { title: 'See the sea', description: 'Somewhere warm, with nowhere to be.' };
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -128,6 +128,20 @@ describe('device wish store', () => {
     await expect(createDeviceStore(storage).list()).resolves.toEqual([]);
   });
 
+  it('reads a row written by the version that still had categories', async () => {
+    // Wishes already saved on a phone carry a `category`. The field is gone
+    // from the contract; those rows must keep showing up, minus the extra key.
+    const storage = fakeStorage({
+      [DEVICE_WISHES_KEY]: JSON.stringify([
+        { id: 'legacy', createdAt: '2026-01-01T00:00:00.000Z', title: 'Older wish', description: 'Still here.', category: 'dream' },
+      ]),
+    });
+    const listed = await createDeviceStore(storage).list();
+    expect(listed).toHaveLength(1);
+    expect(listed[0]?.title).toBe('Older wish');
+    expect(listed[0]).not.toHaveProperty('category');
+  });
+
   it('ignores junk rows but keeps the valid ones', async () => {
     const storage = fakeStorage({
       [DEVICE_WISHES_KEY]: JSON.stringify([
@@ -150,6 +164,6 @@ describe('device wish store', () => {
     const store = createDeviceStore(storage);
     await store.create(VALID_INPUT);
     const raw = JSON.parse(storage.getItem(DEVICE_WISHES_KEY) ?? '[]') as Record<string, unknown>[];
-    expect(Object.keys(raw[0] ?? {}).sort()).toEqual(['category', 'createdAt', 'description', 'id', 'title']);
+    expect(Object.keys(raw[0] ?? {}).sort()).toEqual(['createdAt', 'description', 'id', 'title']);
   });
 });

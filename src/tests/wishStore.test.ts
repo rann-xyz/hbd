@@ -153,7 +153,6 @@ describe('resolveWishStore', () => {
     const created = await resolved.store.create({
       title: 'A quiet room',
       description: 'With a window and a plant.',
-      category: 'dream',
     });
 
     expect(created.source).toBe('cloud');

@@ -173,14 +173,6 @@ export const CAKE = {
   relight: 'Light it again',
 } as const;
 
-export const WISH_CATEGORY_COPY = {
-  dream: { label: 'A dream', blurb: 'Something big, allowed to take years.' },
-  travel: { label: 'Somewhere to go', blurb: 'A place, a road, a window seat.' },
-  self: { label: 'For myself', blurb: 'Softness, health, rest, growing.' },
-  us: { label: 'Us', blurb: 'Things you want for the two of us, someday.' },
-  'little-things': { label: 'Little things', blurb: 'Small joys that still count.' },
-} as const;
-
 export const JOURNAL = {
   eyebrow: 'A wish for your future',
   heading: 'A Wish for Your Future',
@@ -191,7 +183,6 @@ export const JOURNAL = {
   fields: {
     title: { label: 'Title', placeholder: 'Give the wish a name' },
     description: { label: 'What it means', placeholder: 'Say it properly, in your own words' },
-    category: { label: 'Where it belongs', placeholder: 'Choose one' },
   },
   submit: 'Keep this wish',
   submitting: 'Keeping it…',

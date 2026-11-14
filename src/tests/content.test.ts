@@ -4,7 +4,6 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import * as content from '../content';
-import { WISH_CATEGORIES } from '../lib/wishes';
 
 const REQUIRED_APOLOGY =
   "I'm sorry I haven't been able to give you something special yet. I'm still trying my best to make it happen. Maybe I can't give you everything you deserve right now, but please know that I'm working on it. I hope one day I can give you something that makes you feel as special as you truly are.";
@@ -112,9 +111,9 @@ describe('house rules on the writing', () => {
   });
 });
 
-describe('wish categories', () => {
-  it('offers copy for every category the store accepts', () => {
-    expect(Object.keys(content.WISH_CATEGORY_COPY).sort()).toEqual([...WISH_CATEGORIES].sort());
+describe('the wish form copy', () => {
+  it('asks for a title and what it means, and nothing else', () => {
+    expect(Object.keys(content.JOURNAL.fields).sort()).toEqual(['description', 'title']);
   });
 });
 

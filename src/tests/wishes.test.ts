@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  WISH_CATEGORIES,
   WISH_LIMITS,
-  categoryLabel,
-  isWishCategory,
   sanitizeText,
   sortWishes,
   toWish,
@@ -12,20 +9,11 @@ import {
   type Wish,
 } from '../lib/wishes';
 
-const VALID = { title: 'A quiet place to live', description: 'Somewhere with a window and good light.', category: 'dream' };
+const VALID = { title: 'A quiet place to live', description: 'Somewhere with a window and good light.' };
 
 function wish(id: string, createdAt: string, title = 'x'): Wish {
-  return { id, createdAt, title, description: 'desc', category: 'dream', source: 'device' };
+  return { id, createdAt, title, description: 'desc', source: 'device' };
 }
-
-describe('isWishCategory', () => {
-  it('accepts only the published categories', () => {
-    for (const category of WISH_CATEGORIES) expect(isWishCategory(category)).toBe(true);
-    expect(isWishCategory('holiday')).toBe(false);
-    expect(isWishCategory(42)).toBe(false);
-    expect(isWishCategory(null)).toBe(false);
-  });
-});
 
 describe('sanitizeText', () => {
   it('trims, collapses runs of spaces and drops control characters', () => {
@@ -40,8 +28,16 @@ describe('validateWish', () => {
     const result = validateWish({ ...VALID, title: '  A quiet   place  ' });
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value).toEqual({ title: 'A quiet place', description: VALID.description, category: 'dream' });
+      expect(result.value).toEqual({ title: 'A quiet place', description: VALID.description });
     }
+  });
+
+  it('asks for a title and a body, and nothing else', () => {
+    // The form used to make the writer file their own wish under a category.
+    // A wish is now exactly two fields; anything extra is ignored, not stored.
+    const result = validateWish({ ...VALID, category: 'dream' });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(Object.keys(result.value).sort()).toEqual(['description', 'title']);
   });
 
   it('rejects a title that is missing or too short', () => {
@@ -60,14 +56,6 @@ describe('validateWish', () => {
     }
   });
 
-  it('rejects a missing or unknown category', () => {
-    for (const category of [undefined, 'nope', 7]) {
-      const result = validateWish({ ...VALID, category });
-      expect(result.ok).toBe(false);
-      if (!result.ok) expect(result.errors.category).toBeTruthy();
-    }
-  });
-
   it('rejects empty and non-object input without throwing', () => {
     for (const input of [null, undefined, 'a wish', 12, []]) {
       const result = validateWish(input);
@@ -76,7 +64,7 @@ describe('validateWish', () => {
     const empty = validateWish({});
     expect(empty.ok).toBe(false);
     if (!empty.ok) {
-      expect(Object.keys(empty.errors).sort()).toEqual(['category', 'description', 'title']);
+      expect(Object.keys(empty.errors).sort()).toEqual(['description', 'title']);
     }
   });
 
@@ -84,7 +72,6 @@ describe('validateWish', () => {
     const result = validateWish({
       title: 'a'.repeat(WISH_LIMITS.titleMax),
       description: 'b'.repeat(WISH_LIMITS.descriptionMax),
-      category: 'self',
     });
     expect(result.ok).toBe(true);
   });
@@ -97,7 +84,6 @@ describe('toWish', () => {
       created_at: '2026-05-01T10:00:00.000Z',
       title: 'Grow something',
       description: 'A plant, a habit, a person.',
-      category: 'self',
     };
     const normalised = toWish(row, 'cloud');
     expect(normalised?.createdAt).toBe('2026-05-01T10:00:00.000Z');
@@ -106,18 +92,37 @@ describe('toWish', () => {
 
   it('also accepts camelCase records from device storage', () => {
     const normalised = toWish(
-      { id: 'abc', createdAt: '2026-05-01T10:00:00.000Z', title: 'Grow', description: 'Something.', category: 'self' },
+      { id: 'abc', createdAt: '2026-05-01T10:00:00.000Z', title: 'Grow', description: 'Something.' },
       'device',
     );
     expect(normalised?.source).toBe('device');
   });
 
+  it('still loads a record written by the version that had categories', () => {
+    // Wishes already saved on someone's phone carry a `category` field. The
+    // column is gone from the contract, but those rows must keep working
+    // rather than silently disappearing from the list.
+    const legacy = toWish(
+      {
+        id: 'abc',
+        createdAt: '2026-05-01T10:00:00.000Z',
+        title: 'Grow',
+        description: 'Something.',
+        category: 'self',
+      },
+      'device',
+    );
+    expect(legacy).not.toBeNull();
+    expect(legacy?.title).toBe('Grow');
+    expect(legacy).not.toHaveProperty('category');
+  });
+
   it('rejects malformed records instead of trusting them', () => {
     expect(toWish(null, 'device')).toBeNull();
     expect(toWish({ id: 'abc' }, 'device')).toBeNull();
-    expect(toWish({ id: 'abc', createdAt: 'nope', title: 'x', description: 'y', category: 'self' }, 'device')).toBeNull();
+    expect(toWish({ id: 'abc', createdAt: 'nope', title: 'x', description: 'y' }, 'device')).toBeNull();
     expect(
-      toWish({ id: 'abc', createdAt: '2026-05-01T10:00:00.000Z', title: '', description: 'y', category: 'self' }, 'device'),
+      toWish({ id: 'abc', createdAt: '2026-05-01T10:00:00.000Z', title: '', description: 'y' }, 'device'),
     ).toBeNull();
   });
 });
@@ -141,16 +146,5 @@ describe('sortWishes', () => {
     const input = [wish('a', '2026-01-01T00:00:00.000Z'), wish('b', '2026-02-01T00:00:00.000Z')];
     sortWishes(input);
     expect(input.map((item) => item.id)).toEqual(['a', 'b']);
-  });
-});
-
-describe('categoryLabel', () => {
-  it('returns human copy for each category, never a raw slug', () => {
-    for (const category of WISH_CATEGORIES) {
-      const label = categoryLabel(category);
-      expect(label.length).toBeGreaterThan(1);
-      expect(label).not.toBe(category);
-      expect(label).not.toMatch(/[-_]/);
-    }
   });
 });

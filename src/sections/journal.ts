@@ -10,10 +10,7 @@ import { JOURNAL } from '../content';
 import { el, setHidden, setText } from '../lib/dom';
 import { counterText, formatDateTime, formatRelative } from '../lib/format';
 import {
-  WISH_CATEGORIES,
-  WISH_CATEGORY_META,
   WISH_LIMITS,
-  categoryLabel,
   sortWishes,
   validateWish,
   type Wish,
@@ -41,20 +38,17 @@ export interface JournalDeps {
 const FIELD_IDS: Record<WishField, string> = {
   title: 'wish-title-field',
   description: 'wish-description-field',
-  category: 'wish-category-field',
 };
 
 /** Hint and error nodes use the short ids the reader (and the tests) expect. */
 const HINT_IDS: Record<WishField, string> = {
   title: 'wish-title-hint',
   description: 'wish-description-hint',
-  category: 'wish-category-hint',
 };
 
 const ERROR_IDS: Record<WishField, string> = {
   title: 'wish-title-error',
   description: 'wish-description-error',
-  category: 'wish-category-error',
 };
 
 export function buildJournal(deps: JournalDeps = {}): JournalHandle {
@@ -84,10 +78,6 @@ export function buildJournal(deps: JournalDeps = {}): JournalHandle {
     description: el('p', {
       className: 'field__error',
       attrs: { id: ERROR_IDS.description, 'data-error-for': 'description' },
-    }),
-    category: el('p', {
-      className: 'field__error',
-      attrs: { id: ERROR_IDS.category, 'data-error-for': 'category' },
     }),
   };
 
@@ -128,29 +118,6 @@ export function buildJournal(deps: JournalDeps = {}): JournalHandle {
     text: counterText('', WISH_LIMITS.descriptionMax),
   });
 
-  const categorySelect = el('select', {
-    className: 'field__control',
-    attrs: {
-      id: FIELD_IDS.category,
-      name: 'category',
-      'aria-describedby': `${HINT_IDS.category} ${ERROR_IDS.category}`,
-    },
-  });
-  categorySelect.append(
-    el('option', { text: JOURNAL.fields.category.placeholder, attrs: { value: '', disabled: true, selected: true } }),
-  );
-  for (const category of WISH_CATEGORIES) {
-    categorySelect.append(
-      el('option', { text: WISH_CATEGORY_META[category].label, attrs: { value: category } }),
-    );
-  }
-
-  const categoryHint = el('p', {
-    className: 'field__hint',
-    attrs: { id: HINT_IDS.category },
-    text: WISH_CATEGORY_META.dream.blurb,
-  });
-
   const submitButton = el('button', {
     className: 'btn btn--solid journal__submit',
     text: JOURNAL.submit,
@@ -184,19 +151,6 @@ export function buildJournal(deps: JournalDeps = {}): JournalHandle {
           descriptionInput,
           descriptionHint,
           errors.description,
-        ],
-      }),
-      el('div', {
-        className: 'field',
-        children: [
-          el('label', {
-            className: 'field__label',
-            text: JOURNAL.fields.category.label,
-            attrs: { for: FIELD_IDS.category },
-          }),
-          categorySelect,
-          categoryHint,
-          errors.category,
         ],
       }),
       submitButton,
@@ -249,7 +203,7 @@ export function buildJournal(deps: JournalDeps = {}): JournalHandle {
   }
 
   function firstInvalidControl(fieldErrors: WishFieldErrors): HTMLElement | null {
-    const order: WishField[] = ['title', 'description', 'category'];
+    const order: WishField[] = ['title', 'description'];
     const first = order.find((field) => fieldErrors[field] !== undefined);
     if (!first) return null;
     return section.querySelector<HTMLElement>(`#${FIELD_IDS[first]}`);
@@ -279,11 +233,7 @@ export function buildJournal(deps: JournalDeps = {}): JournalHandle {
       children: [
         el('div', {
           className: 'wish-card__top',
-          children: [
-            el('span', { className: 'chip', text: categoryLabel(wish.category) }),
-            time,
-            remove,
-          ],
+          children: [time, remove],
         }),
         el('h4', { className: 'wish-card__title', text: wish.title }),
         el('p', { className: 'wish-card__body', text: wish.description }),
@@ -423,7 +373,6 @@ export function buildJournal(deps: JournalDeps = {}): JournalHandle {
     const result = validateWish({
       title: titleInput.value,
       description: descriptionInput.value,
-      category: categorySelect.value,
     });
 
     clearErrors();
@@ -462,10 +411,6 @@ export function buildJournal(deps: JournalDeps = {}): JournalHandle {
 
   const onTitleInput = (): void => updateCounters();
   const onDescriptionInput = (): void => updateCounters();
-  const onCategoryChange = (): void => {
-    const meta = WISH_CATEGORY_META[categorySelect.value as (typeof WISH_CATEGORIES)[number]];
-    if (meta) setText(categoryHint, meta.blurb);
-  };
   const onSubmit = (event: Event): void => {
     event.preventDefault();
     void submit();
@@ -473,7 +418,6 @@ export function buildJournal(deps: JournalDeps = {}): JournalHandle {
 
   titleInput.addEventListener('input', onTitleInput);
   descriptionInput.addEventListener('input', onDescriptionInput);
-  categorySelect.addEventListener('change', onCategoryChange);
   form.addEventListener('submit', onSubmit);
 
   updateCounters();
@@ -488,7 +432,6 @@ export function buildJournal(deps: JournalDeps = {}): JournalHandle {
     destroy(): void {
       titleInput.removeEventListener('input', onTitleInput);
       descriptionInput.removeEventListener('input', onDescriptionInput);
-      categorySelect.removeEventListener('change', onCategoryChange);
       form.removeEventListener('submit', onSubmit);
     },
   };

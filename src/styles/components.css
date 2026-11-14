@@ -525,20 +525,6 @@ textarea.field__control {
   width: 64%;
 }
 
-/* ---------- Chips / tags ---------- */
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.25rem 0.6rem;
-  background: var(--blush);
-  border-radius: 99px;
-  font-size: var(--t-eyebrow);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--cocoa-soft);
-}
-
 /* ---------- Wax seal ---------- */
 .seal {
   display: grid;

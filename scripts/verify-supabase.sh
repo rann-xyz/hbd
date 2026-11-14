@@ -38,7 +38,7 @@ HASH="$(printf '%s' "$TOKEN" | sha256sum | cut -d' ' -f1)"
 OTHER_HASH="$(printf 'not-my-device' | sha256sum | cut -d' ' -f1)"
 STAMP="$(date +%s)"
 TITLE="verify-$STAMP"
-BODY="{\"title\":\"$TITLE\",\"description\":\"Automated schema check, safe to delete.\",\"category\":\"little-things\",\"owner_token_hash\":\"$HASH\"}"
+BODY="{\"title\":\"$TITLE\",\"description\":\"Automated schema check, safe to delete.\",\"owner_token_hash\":\"$HASH\"}"
 
 pass=0; fail=0
 ok()   { echo "  PASS  $1"; pass=$((pass+1)); }
@@ -62,7 +62,7 @@ ROW_ID=$(grep -o '"id":"[^"]*"' /tmp/vs-insert.json | head -1 | cut -d'"' -f4)
 # 1b. insert with a forged hash must be refused (RLS with-check)
 code=$(req POST "$REST" -o /dev/null -w '%{http_code}' \
   -H "x-wish-token-hash: $OTHER_HASH" \
-  -d "{\"title\":\"forged-$STAMP\",\"description\":\"should never persist\",\"category\":\"self\",\"owner_token_hash\":\"$HASH\"}")
+  -d "{\"title\":\"forged-$STAMP\",\"description\":\"should never persist\",\"owner_token_hash\":\"$HASH\"}")
 if [[ "$code" == "401" || "$code" == "403" ]]; then ok "forged owner_token_hash refused ($code)"; else bad "forged hash accepted (got $code)"; fi
 
 # 2. read back as owner

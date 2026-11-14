@@ -98,12 +98,11 @@ export interface WishRow {
   id: string;
   title: string;
   description: string;
-  category: string;
   created_at: string;
 }
 
 /** Column list we actually read — nothing more is pulled from the table. */
-export const WISH_COLUMNS = 'id,title,description,category,created_at';
+export const WISH_COLUMNS = 'id,title,description,created_at';
 
 export async function createSupabaseClient(
   config: SupabaseConfig,
@@ -137,7 +136,6 @@ export function createCloudStore(client: SupabaseClient, tokenHash: string): Wis
         .insert({
           title: input.title,
           description: input.description,
-          category: input.category,
           owner_token_hash: tokenHash,
         })
         .select(WISH_COLUMNS)

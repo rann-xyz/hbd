@@ -3,12 +3,13 @@
    Validation lives here (not in the UI) so the form, the store and
    the tests all agree on exactly what a valid wish is. Wishes are
    private by default: nothing here reads someone else's entries.
+
+   A wish is only a title and what it means. Categories were removed:
+   asking someone to file their own wish under a label made the form
+   feel like a database and the cards read like tags. Records written
+   by the older version still load — `toWish` reads the two fields it
+   needs and ignores anything else it finds in the row.
    ============================================================ */
-
-import { WISH_CATEGORY_COPY } from '../content';
-
-export const WISH_CATEGORIES = ['dream', 'travel', 'self', 'us', 'little-things'] as const;
-export type WishCategory = (typeof WISH_CATEGORIES)[number];
 
 export const WISH_LIMITS = {
   titleMin: 2,
@@ -21,7 +22,6 @@ export const WISH_LIMITS = {
 export interface WishInput {
   readonly title: string;
   readonly description: string;
-  readonly category: WishCategory;
 }
 
 export interface Wish extends WishInput {
@@ -33,19 +33,12 @@ export interface Wish extends WishInput {
 
 export type WishSource = 'cloud' | 'device';
 
-export type WishField = 'title' | 'description' | 'category';
+export type WishField = 'title' | 'description';
 export type WishFieldErrors = Partial<Record<WishField, string>>;
 
 export type WishValidation =
   | { readonly ok: true; readonly value: WishInput }
   | { readonly ok: false; readonly errors: WishFieldErrors };
-
-export const WISH_CATEGORY_META: Record<WishCategory, { readonly label: string; readonly blurb: string }> =
-  WISH_CATEGORY_COPY;
-
-export function isWishCategory(value: unknown): value is WishCategory {
-  return typeof value === 'string' && (WISH_CATEGORIES as readonly string[]).includes(value);
-}
 
 /** Drop anything that is not printable text, keeping tabs and newlines. */
 function stripControlCharacters(value: string): string {
@@ -73,7 +66,6 @@ export function validateWish(input: unknown): WishValidation {
 
   const title = typeof record['title'] === 'string' ? sanitizeText(record['title']) : '';
   const description = typeof record['description'] === 'string' ? sanitizeText(record['description']) : '';
-  const category = record['category'];
 
   if (title.length < WISH_LIMITS.titleMin) {
     errors.title = 'Give it at least a couple of characters.';
@@ -87,20 +79,9 @@ export function validateWish(input: unknown): WishValidation {
     errors.description = `Keep it under ${WISH_LIMITS.descriptionMax} characters.`;
   }
 
-  if (!isWishCategory(category)) {
-    errors.category = 'Pick one of the categories.';
-  }
-
   if (Object.keys(errors).length > 0) return { ok: false, errors };
 
-  return {
-    ok: true,
-    value: {
-      title,
-      description,
-      category: category as WishCategory,
-    },
-  };
+  return { ok: true, value: { title, description } };
 }
 
 /** Normalise a stored record (from Postgres or from device storage). */
@@ -115,7 +96,6 @@ export function toWish(record: unknown, source: WishSource): Wish | null {
   const validation = validateWish({
     title: row['title'],
     description: row['description'],
-    category: row['category'],
   });
 
   if (!id || !createdAt || !validation.ok) return null;
@@ -130,8 +110,4 @@ export function sortWishes(wishes: readonly Wish[]): Wish[] {
     if (diff !== 0) return diff;
     return a.id.localeCompare(b.id);
   });
-}
-
-export function categoryLabel(category: WishCategory): string {
-  return WISH_CATEGORY_META[category].label;
 }

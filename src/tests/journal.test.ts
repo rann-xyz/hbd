@@ -54,17 +54,14 @@ function cards(): HTMLElement[] {
   return Array.from(document.querySelectorAll<HTMLElement>('[data-wish-id]'));
 }
 
-function type(title: string, description: string, category = 'dream'): void {
+function type(title: string, description: string): void {
   const titleInput = field('wish-title-field') as HTMLInputElement;
   const descriptionInput = field('wish-description-field') as HTMLTextAreaElement;
-  const categorySelect = field('wish-category-field') as HTMLSelectElement;
 
   titleInput.value = title;
   titleInput.dispatchEvent(new Event('input', { bubbles: true }));
   descriptionInput.value = description;
   descriptionInput.dispatchEvent(new Event('input', { bubbles: true }));
-  categorySelect.value = category;
-  categorySelect.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
 afterEach(() => {
@@ -122,7 +119,6 @@ describe('journal — initial states', () => {
       createdAt: '2026-11-14T05:00:00.000Z',
       title: 'One wish',
       description: 'Just the one.',
-      category: 'dream',
       source: 'device',
     };
     const oneStore: WishStore = {
@@ -153,7 +149,7 @@ describe('journal — initial states', () => {
     mount();
     await settle();
 
-    for (const id of ['wish-title-field', 'wish-description-field', 'wish-category-field']) {
+    for (const id of ['wish-title-field', 'wish-description-field']) {
       const control = field(id);
       const label = document.querySelector(`label[for="${id}"]`);
       expect(label).not.toBeNull();
@@ -164,13 +160,15 @@ describe('journal — initial states', () => {
     }
   });
 
-  it('offers a real option per category', async () => {
+  it('asks for a title and a body, and nothing else', async () => {
+    // Regression: the form used to demand a category, which turned a private
+    // wish into a filing exercise. It must not come back.
     mount();
     await settle();
-    const options = Array.from(document.querySelectorAll('#wish-category-field option')).map(
-      (option) => (option as HTMLOptionElement).value,
-    );
-    expect(options.filter(Boolean)).toEqual(['dream', 'travel', 'self', 'us', 'little-things']);
+    expect(document.querySelector('#wish-category-field')).toBeNull();
+    expect(document.querySelectorAll('[data-journal-form] select')).toHaveLength(0);
+    const controls = Array.from(document.querySelectorAll('[data-journal-form] input, [data-journal-form] textarea'));
+    expect(controls.map((control) => control.getAttribute('name'))).toEqual(['title', 'description']);
   });
 });
 
@@ -183,7 +181,6 @@ describe('journal — validation', () => {
 
     expect(errorFor('title').length).toBeGreaterThan(0);
     expect(errorFor('description').length).toBeGreaterThan(0);
-    expect(errorFor('category').length).toBeGreaterThan(0);
     expect(field('wish-title-field').getAttribute('aria-invalid')).toBe('true');
     expect(built.wishes()).toHaveLength(0);
     expect(cards()).toHaveLength(0);
@@ -204,7 +201,7 @@ describe('journal — validation', () => {
     await settle();
     expect(errorFor('title').length).toBeGreaterThan(0);
 
-    type('A window seat', 'Somewhere far, with the whole night outside.', 'travel');
+    type('A window seat', 'Somewhere far, with the whole night outside.');
     submit();
     await settle();
 
@@ -225,7 +222,7 @@ describe('journal — real writes through the UI', () => {
     const built = mount();
     await settle();
 
-    type('A quiet place', 'Somewhere with a window, a plant and no hurry.', 'dream');
+    type('A quiet place', 'Somewhere with a window, a plant and no hurry.');
     submit();
     await settle();
 
@@ -235,7 +232,9 @@ describe('journal — real writes through the UI', () => {
     expect(cards()[0]?.querySelector('.wish-card__body')?.textContent).toBe(
       'Somewhere with a window, a plant and no hurry.',
     );
-    expect(cards()[0]?.querySelector('.chip')?.textContent).toBe('A dream');
+    // A card shows the wish and when it was written — no category tag.
+    expect(cards()[0]?.querySelector('.chip')).toBeNull();
+    expect(cards()[0]?.querySelector('.wish-card__time')).not.toBeNull();
     expect(document.body.textContent).toContain(JOURNAL.savedTitle);
     expect(document.querySelector('[data-journal-count]')?.textContent).toBe(`1 ${JOURNAL.localCountLabelOne}`);
   });
@@ -243,19 +242,18 @@ describe('journal — real writes through the UI', () => {
   it('resets the form after a successful save', async () => {
     mount();
     await settle();
-    type('Reset me', 'This should not stay in the inputs.', 'self');
+    type('Reset me', 'This should not stay in the inputs.');
     submit();
     await settle();
 
     expect((field('wish-title-field') as HTMLInputElement).value).toBe('');
     expect((field('wish-description-field') as HTMLTextAreaElement).value).toBe('');
-    expect((field('wish-category-field') as HTMLSelectElement).value).toBe('');
   });
 
   it('timestamps every wish with a real time element', async () => {
     mount();
     await settle();
-    type('Timestamped', 'So it can be read months later.', 'little-things');
+    type('Timestamped', 'So it can be read months later.');
     submit();
     await settle();
 
@@ -268,11 +266,11 @@ describe('journal — real writes through the UI', () => {
   it('keeps the newest wish first', async () => {
     mount();
     await settle();
-    type('First', 'Older wish written first.', 'dream');
+    type('First', 'Older wish written first.');
     submit();
     await settle();
     await new Promise((resolve) => setTimeout(resolve, 5));
-    type('Second', 'Newer wish written second.', 'dream');
+    type('Second', 'Newer wish written second.');
     submit();
     await settle();
 
@@ -303,7 +301,7 @@ describe('journal — real writes through the UI', () => {
     });
     await settle();
 
-    type('Will fail', 'The store is going to refuse this one.', 'dream');
+    type('Will fail', 'The store is going to refuse this one.');
     submit();
     await settle();
 
@@ -317,7 +315,7 @@ describe('journal — deletion', () => {
   it('deletes a wish after confirmation and updates the count', async () => {
     const built = mount({ confirmDelete: () => true });
     await settle();
-    type('Delete me', 'This one is not staying.', 'dream');
+    type('Delete me', 'This one is not staying.');
     submit();
     await settle();
     expect(cards()).toHaveLength(1);
@@ -334,7 +332,7 @@ describe('journal — deletion', () => {
   it('keeps the wish when the confirmation is declined', async () => {
     const built = mount({ confirmDelete: () => false });
     await settle();
-    type('Keeping this', 'Declined the confirmation on purpose.', 'dream');
+    type('Keeping this', 'Declined the confirmation on purpose.');
     submit();
     await settle();
 
@@ -348,7 +346,7 @@ describe('journal — deletion', () => {
   it('labels each delete button with the wish it belongs to', async () => {
     mount();
     await settle();
-    type('Named wish', 'So the delete button can name it too.', 'dream');
+    type('Named wish', 'So the delete button can name it too.');
     submit();
     await settle();
 
@@ -406,7 +404,7 @@ describe('journal — teardown', () => {
     await settle();
     built.destroy();
 
-    type('Too late', 'The journal has been torn down already.', 'dream');
+    type('Too late', 'The journal has been torn down already.');
     submit();
     await settle();
 

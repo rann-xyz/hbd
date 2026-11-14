@@ -101,7 +101,6 @@ interface DeviceRecord {
   createdAt: string;
   title: string;
   description: string;
-  category: string;
 }
 
 export function readDeviceRecords(storage: StorageLike): DeviceRecord[] {
@@ -140,7 +139,6 @@ export function createDeviceStore(storage: StorageLike = resolveStorage()): Wish
         createdAt: new Date().toISOString(),
         title: input.title,
         description: input.description,
-        category: input.category,
       };
       const records = readDeviceRecords(storage);
       records.push(record);
