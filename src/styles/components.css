@@ -1062,3 +1062,94 @@ body.is-letter-open {
   color: var(--cocoa-soft);
   white-space: pre-line;
 }
+
+/* ---------- Music control ---------- */
+.music {
+  position: fixed;
+  right: clamp(0.9rem, 3.4vw, 1.7rem);
+  bottom: clamp(0.9rem, 3.4vw, 1.7rem);
+  z-index: var(--z-nav);
+}
+
+.music[hidden] {
+  display: none;
+}
+
+.music__toggle {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2.9rem;
+  height: 2.9rem;
+  border-radius: 50%;
+  background: var(--soft-white);
+  border: 1px solid var(--cocoa-hair);
+  color: var(--cocoa-soft);
+  box-shadow: var(--shadow-paper);
+  transition:
+    background-color var(--dur) var(--ease-soft),
+    border-color var(--dur) var(--ease-soft),
+    color var(--dur) var(--ease-soft),
+    transform var(--dur-fast) var(--ease-soft),
+    box-shadow var(--dur) var(--ease-soft);
+}
+
+.music__toggle:hover {
+  color: var(--cocoa);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lift);
+}
+
+.music__toggle[aria-pressed='true'] {
+  background: var(--cocoa);
+  border-color: var(--cocoa);
+  color: var(--cream);
+}
+
+/* A ring that breathes out of the button while the tune is playing. */
+.music__toggle::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 1px solid var(--rose-ink);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.music__icon {
+  display: inline-block;
+  transform-origin: 50% 80%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .music.is-playing .music__toggle::after {
+    animation: music-ring 2.8s var(--ease-soft) infinite;
+  }
+
+  .music.is-playing .music__icon {
+    animation: music-sway 1.9s var(--ease-soft) infinite;
+  }
+}
+
+@keyframes music-ring {
+  0% {
+    opacity: 0.5;
+    transform: scale(0.9);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(1.22);
+  }
+}
+
+@keyframes music-sway {
+  0%,
+  100% {
+    transform: rotate(-7deg);
+  }
+  50% {
+    transform: rotate(7deg);
+  }
+}

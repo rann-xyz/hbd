@@ -221,6 +221,13 @@ export const FOOT = {
   note: 'no templates, no shortcuts, one photograph',
 } as const;
 
+export const MUSIC = {
+  /** The control is a single button, so its label carries the whole meaning. */
+  playLabel: 'Play the birthday song',
+  pauseLabel: 'Pause the birthday song',
+  hint: 'Happy Birthday, played on a music box',
+} as const;
+
 /** Navigation is generated from the sections, so it can never drift out of sync. */
 export interface NavEntry {
   readonly id: string;

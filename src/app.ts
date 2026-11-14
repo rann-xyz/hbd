@@ -6,6 +6,7 @@
 
 import { BUILT_SECTIONS, COUNTDOWN_COPY, FOOT, RECIPIENT, navEntriesFor } from './content';
 import { clear, el, qs, setHidden, toggleClass } from './lib/dom';
+import { createMusicBox, shouldAutoStart, type MusicBox } from './lib/music';
 import { prefersReducedMotion, revealOnScroll, scrollToElement } from './lib/motion';
 import { sprig } from './lib/svg';
 import { buildCake } from './sections/cake';
@@ -13,6 +14,7 @@ import { buildClosing } from './sections/closing';
 import { buildCountdown, type CountdownController } from './sections/countdown';
 import { buildJournal } from './sections/journal';
 import { buildLetter } from './sections/letter';
+import { buildMusicControl, type MusicControlHandle } from './sections/music';
 import { buildNotes } from './sections/notes';
 import { buildOpening, OPEN_EVENT } from './sections/opening';
 import { buildPortrait } from './sections/portrait';
@@ -238,7 +240,15 @@ export interface BootedApp {
   destroy(): void;
 }
 
-export function boot(root: Element | null = qs<HTMLElement>('[data-app]')): BootedApp {
+export interface BootOptions {
+  /** Injected by tests so no real AudioContext is ever constructed. */
+  readonly musicBox?: MusicBox;
+}
+
+export function boot(
+  root: Element | null = qs<HTMLElement>('[data-app]'),
+  options: BootOptions = {},
+): BootedApp {
   const teardown: (() => void)[] = [];
 
   if (!root) {
@@ -268,6 +278,24 @@ export function boot(root: Element | null = qs<HTMLElement>('[data-app]')): Boot
     foot.replaceWith(built);
   }
 
+  // The birthday tune. A runtime without Web Audio simply never gets the
+  // control, rather than getting a button that does nothing.
+  let musicControl: MusicControlHandle | null = null;
+  const music: MusicBox =
+    options.musicBox ??
+    createMusicBox({
+      // Starting the tune can take a moment (the browser may have to resume a
+      // suspended context), so the button follows the box rather than assuming
+      // the play() call landed.
+      onStateChange: () => musicControl?.sync(),
+    });
+
+  if (music.available && typeof document !== 'undefined' && document.body) {
+    musicControl = buildMusicControl(music);
+    document.body.append(musicControl.element);
+    teardown.push(() => musicControl?.destroy());
+  }
+
   teardown.push(revealOnScroll(root, { stagger: 90 }));
 
   if (progress) teardown.push(trackProgress(progress));
@@ -286,6 +314,14 @@ export function boot(root: Element | null = qs<HTMLElement>('[data-app]')): Boot
     if (nav) setHidden(nav, false);
     const footNow = qs<HTMLElement>('[data-foot]');
     if (footNow) setHidden(footNow, false);
+
+    // This runs inside the click that opened the surprise, which is the user
+    // gesture a browser requires before it will let audio start.
+    if (musicControl) {
+      musicControl.reveal();
+      if (shouldAutoStart()) music.play();
+      musicControl.sync();
+    }
 
     const countdown = qs<HTMLElement>('#countdown');
     if (countdown) {
@@ -325,6 +361,7 @@ export function boot(root: Element | null = qs<HTMLElement>('[data-app]')): Boot
   return {
     destroy(): void {
       (root as HTMLElement).removeEventListener(OPEN_EVENT, onOpen);
+      music.destroy();
       for (const off of teardown) off();
     },
   };

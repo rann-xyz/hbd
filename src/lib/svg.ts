@@ -180,3 +180,18 @@ export function envelope(size = 46): SVGSVGElement {
     ],
   });
 }
+
+/** A hand-drawn quaver, for the music control. */
+export function note(size = 16): SVGSVGElement {
+  return svg({
+    viewBox: '0 0 18 24',
+    width: size,
+    height: Math.round((size * 24) / 18),
+    paths: [
+      // The head sits a touch crooked, like everything else drawn here.
+      { d: 'M1.2 18.5a4 3 0 1 0 8 0 4 3 0 1 0-8 0Z', fill: 'currentColor' },
+      { d: 'M9.1 18.4C9.4 13.5 9.4 8.6 9 3.7', stroke: 'currentColor', strokeWidth: 1.4 },
+      { d: 'M9 3.8c2.7.5 4.6 1.8 5.6 3.9-1.7-1-3.6-1.4-5.7-1.1', stroke: 'currentColor', strokeWidth: 1.3 },
+    ],
+  });
+}
