@@ -145,6 +145,93 @@ describe('accessibility of the shell', () => {
   });
 });
 
+describe('the tune that starts on its own', () => {
+  /**
+   * A box that models the browser: audio only starts once a gesture has
+   * unlocked it, so a boot-time attempt can be refused without the tune being
+   * broken for good. Start it unlocked to model a browser that trusts the site.
+   */
+  function gatedBox(unlocked = false) {
+    let playing = false;
+    let open = unlocked;
+    const play = vi.fn(() => {
+      if (open) playing = true;
+    });
+    const box: MusicBox = {
+      available: true,
+      isPlaying: () => playing,
+      play,
+      pause: vi.fn(() => {
+        playing = false;
+      }),
+      toggle: () => playing,
+      destroy: vi.fn(),
+    };
+    return { box, play, isPlaying: () => playing, unlock: () => { open = true; } };
+  }
+
+  it('plays the moment the page is entered, with nothing pressed', () => {
+    const gate = gatedBox(true);
+    app = boot(undefined, { musicBox: gate.box });
+
+    expect(gate.play).toHaveBeenCalledTimes(1);
+    expect(gate.isPlaying()).toBe(true);
+  });
+
+  it('offers the way to turn it off, without being asked to reveal itself', () => {
+    const gate = gatedBox(true);
+    app = boot(undefined, { musicBox: gate.box });
+
+    expect(document.querySelector('[data-music]')?.hasAttribute('hidden')).toBe(false);
+  });
+
+  it('leaves no play button behind when the browser refuses the boot-time start', () => {
+    const gate = gatedBox();
+    app = boot(undefined, { musicBox: gate.box });
+
+    // A visible play button would be pressed in the same gesture that unlocks
+    // audio: the tune would start and stop again in one tap.
+    expect(document.querySelector('[data-music]')?.hasAttribute('hidden')).toBe(true);
+  });
+
+  it('takes the first touch anywhere as entering the page', () => {
+    const gate = gatedBox();
+    app = boot(undefined, { musicBox: gate.box });
+
+    // The browser refused the boot-time attempt, the way a phone does.
+    expect(gate.play).toHaveBeenCalledTimes(1);
+    expect(gate.isPlaying()).toBe(false);
+
+    // The visitor touches the page — any touch counts as entering it.
+    gate.unlock();
+    document.dispatchEvent(new Event('pointerdown'));
+
+    expect(gate.isPlaying()).toBe(true);
+    expect(gate.play).toHaveBeenCalledTimes(2);
+
+    // One gesture is enough: later taps must not restart the tune.
+    document.dispatchEvent(new Event('pointerdown'));
+    expect(gate.play).toHaveBeenCalledTimes(2);
+  });
+
+  it('starts when the surprise is opened, whatever the browser allowed before', () => {
+    const gate = gatedBox();
+    app = boot(undefined, { musicBox: gate.box });
+    gate.play.mockClear();
+
+    gate.unlock();
+    document.querySelector<HTMLButtonElement>('[data-open-surprise]')?.click();
+
+    expect(gate.play).toHaveBeenCalledTimes(1);
+    expect(gate.isPlaying()).toBe(true);
+  });
+
+  it('stays silent where there is no Web Audio at all', () => {
+    app = boot(undefined, { musicBox: silentMusicBox() });
+    expect(document.querySelector('[data-music]')).toBeNull();
+  });
+});
+
 describe('the tune the cake asks for', () => {
   it('plays the music box when the cake asks for it', () => {
     const play = vi.fn();
@@ -157,6 +244,8 @@ describe('the tune the cake asks for', () => {
       destroy: vi.fn(),
     };
     app = boot(undefined, { musicBox: box });
+    // The tune starts by itself on entry; this test is about the cake's ask.
+    play.mockClear();
 
     document.getElementById('wish')?.dispatchEvent(new CustomEvent(TUNE_REQUEST_EVENT, { bubbles: true }));
 

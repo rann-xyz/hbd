@@ -51,6 +51,10 @@ export function buildMusicControl(box: MusicBox): MusicControlHandle {
     button.setAttribute('aria-pressed', playing ? 'true' : 'false');
     button.setAttribute('aria-label', playing ? MUSIC.pauseLabel : MUSIC.playLabel);
     element.classList.toggle('is-playing', playing);
+    // Music must never be music with no way out. The control shows itself the
+    // moment there is something to hear — including when the shell started the
+    // tune on its own, before anyone pressed anything at all.
+    if (playing) setHidden(element, false);
   }
 
   const onClick = (): void => {

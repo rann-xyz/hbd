@@ -6,7 +6,7 @@
 
 import { BUILT_SECTIONS, COUNTDOWN_COPY, FOOT, RECIPIENT, navEntriesFor } from './content';
 import { clear, el, qs, setHidden, toggleClass } from './lib/dom';
-import { createMusicBox, shouldAutoStart, TUNE_REQUEST_EVENT, type MusicBox } from './lib/music';
+import { createMusicBox, TUNE_REQUEST_EVENT, type MusicBox } from './lib/music';
 import { prefersReducedMotion, revealOnScroll, scrollToElement } from './lib/motion';
 import { sprig } from './lib/svg';
 import { buildCake } from './sections/cake';
@@ -18,6 +18,13 @@ import { buildMusicControl, type MusicControlHandle } from './sections/music';
 import { buildNotes } from './sections/notes';
 import { buildOpening, OPEN_EVENT } from './sections/opening';
 import { buildPortrait } from './sections/portrait';
+
+/**
+ * The gestures that count as entering the page. A browser unlocks audio on
+ * the first real interaction, whichever kind it is — so the tune does not
+ * wait for the one button that opens the surprise.
+ */
+const FIRST_GESTURES = ['pointerdown', 'keydown', 'touchstart'] as const;
 
 export interface SectionInstance {
   readonly id: string;
@@ -296,6 +303,33 @@ export function boot(
     teardown.push(() => musicControl?.destroy());
   }
 
+  // The tune is meant to be heard, not asked for. It starts by itself the
+  // moment the page is entered — and since a browser only lets audio begin
+  // inside a gesture, that is tried twice: at boot, for the visitors whose
+  // browser already trusts the site enough, and again on the first touch
+  // anywhere on the page, not only on the button that opens the surprise.
+  // Nothing is revealed here: the control shows itself the moment there is
+  // sound to silence, so a refused attempt never leaves a play button that
+  // would fight the very gesture that unlocked the tune.
+  const startTune = (): void => {
+    if (!music.available || music.isPlaying()) return;
+    music.play();
+    musicControl?.sync();
+  };
+
+  startTune();
+
+  const onFirstGesture = (): void => {
+    startTune();
+    for (const type of FIRST_GESTURES) document.removeEventListener(type, onFirstGesture);
+  };
+  for (const type of FIRST_GESTURES) {
+    document.addEventListener(type, onFirstGesture, { passive: true });
+  }
+  teardown.push(() => {
+    for (const type of FIRST_GESTURES) document.removeEventListener(type, onFirstGesture);
+  });
+
   // The cake asks for the tune instead of owning a player of its own. When
   // there is no Web Audio to play into, the ask is taken off the page rather
   // than left as a button that does nothing.
@@ -334,7 +368,7 @@ export function boot(
     // gesture a browser requires before it will let audio start.
     if (musicControl) {
       musicControl.reveal();
-      if (shouldAutoStart()) music.play();
+      music.play();
       musicControl.sync();
     }
 

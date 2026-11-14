@@ -142,22 +142,8 @@ export interface MusicBoxOptions {
 }
 
 /**
- * Whether the tune should start by itself when the surprise is opened.
- * It does, unless the visitor turned it off on an earlier visit.
+ * A short noise tail: enough to sound like a room, not like a cathedral.
  */
-export function shouldAutoStart(
-  options: Pick<MusicBoxOptions, 'storage' | 'rememberPreference'> = {},
-): boolean {
-  if (options.rememberPreference === false) return true;
-  const storage = options.storage ?? resolveStorage();
-  try {
-    return storage.getItem(MUSIC_PREFERENCE_KEY) !== 'off';
-  } catch {
-    return true;
-  }
-}
-
-/** A short noise tail: enough to sound like a room, not like a cathedral. */
 function buildRoomImpulse(context: AudioContext, seconds = 1.6, decay = 2.6): AudioBuffer {
   const rate = context.sampleRate || 44100;
   const length = Math.max(1, Math.floor(rate * seconds));

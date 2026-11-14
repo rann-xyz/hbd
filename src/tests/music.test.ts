@@ -11,7 +11,6 @@ import {
   isAudioSupported,
   loopSeconds,
   midiToFrequency,
-  shouldAutoStart,
   silentMusicBox,
   totalBeats,
 } from '../lib/music';
@@ -200,29 +199,6 @@ describe('the melody', () => {
   it('tunes A4 to 440 Hz and C4 to the usual 261.63', () => {
     expect(midiToFrequency(69)).toBeCloseTo(440, 6);
     expect(midiToFrequency(60)).toBeCloseTo(261.6256, 3);
-  });
-});
-
-/* ---------------- the preference ---------------- */
-
-describe('shouldAutoStart', () => {
-  it('starts the tune for a first-time visitor', () => {
-    expect(shouldAutoStart({ storage: fakeStorage() })).toBe(true);
-  });
-
-  it('stays quiet for someone who turned it off last time', () => {
-    expect(shouldAutoStart({ storage: fakeStorage({ [MUSIC_PREFERENCE_KEY]: 'off' }) })).toBe(false);
-  });
-
-  it('survives storage that throws', () => {
-    const hostile: StorageLike = {
-      getItem: () => {
-        throw new Error('blocked');
-      },
-      setItem: () => {},
-      removeItem: () => {},
-    };
-    expect(shouldAutoStart({ storage: hostile })).toBe(true);
   });
 });
 
@@ -421,17 +397,21 @@ describe('the music control', () => {
     expect(handle.element.classList.contains('is-playing')).toBe(false);
   });
 
-  it('picks up a tune the shell started on its own', () => {
+  it('picks up a tune the shell started on its own, and offers the way out', () => {
     const fake = fakeContext();
     const box = createMusicBox({ contextFactory: () => fake.context, storage: fakeStorage() });
     const { handle } = mount(box);
     const button = handle.element.querySelector('[data-music-toggle]') as HTMLButtonElement;
 
-    // This is what boot() does when the surprise opens.
+    // This is what boot() does the moment the page is entered.
     box.play();
     handle.sync();
 
     expect(button.getAttribute('aria-pressed')).toBe('true');
+    // A tune nobody asked for still has to come with its off switch: the
+    // control shows itself as soon as there is something to hear, even though
+    // the shell never called reveal().
+    expect(handle.element.hasAttribute('hidden')).toBe(false);
   });
 
   it('stops listening once destroyed', () => {
