@@ -8,6 +8,14 @@
   box-sizing: border-box;
 }
 
+/* Anything the scripts hide must actually disappear. A bare `[hidden]` rule is
+   not enough on its own: a class that sets `display` (flex, grid, inline-flex)
+   outranks the attribute, which left the "light it again" button and the wish
+   list on screen while their code believed they were hidden. */
+[hidden] {
+  display: none !important;
+}
+
 html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;

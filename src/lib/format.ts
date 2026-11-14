@@ -4,7 +4,14 @@
    ============================================================ */
 
 export const DEFAULT_TIME_ZONE = 'Asia/Jakarta';
-export const DEFAULT_LOCALE = 'id-ID';
+
+/**
+ * The page is written in English (`<html lang="en">`, every string in
+ * content.ts), so the default has to match it. Passing 'id-ID' here leaked
+ * Indonesian into an English page — the wish cards read "sekarang" and
+ * "14 November 2026 pukul 16.44" while everything around them was English.
+ */
+export const DEFAULT_LOCALE = 'en-GB';
 
 export function pad(value: number, size = 2): string {
   const safe = Number.isFinite(value) ? Math.max(0, Math.trunc(value)) : 0;

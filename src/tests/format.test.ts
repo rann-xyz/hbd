@@ -79,3 +79,29 @@ describe('truncate / counterText', () => {
     expect(counterText('hello', 600)).toBe('5 / 600');
   });
 });
+
+/**
+ * Every other test passes a locale explicitly, which is exactly how a wrong
+ * default hid for so long: the wish cards rendered "sekarang" and
+ * "pukul 16.44" in the middle of an English page. These call the formatters
+ * the way the site calls them — with no locale at all.
+ */
+describe('the default locale', () => {
+  const now = new Date('2026-11-17T12:00:00.000Z');
+
+  it('speaks the same language as the page', () => {
+    expect(formatRelative('2026-11-17T11:55:00.000Z', now)).toMatch(/minutes ago/);
+    expect(formatDateTime('2026-11-17T00:00:00.000Z')).toMatch(/at /);
+  });
+
+  it('never drops Indonesian into an English page', () => {
+    const rendered = [
+      formatRelative('2026-11-17T11:55:00.000Z', now),
+      formatRelative(now, now),
+      formatDateTime('2026-11-17T00:00:00.000Z'),
+      formatDateOnly('2026-11-17T00:00:00.000Z'),
+    ].join(' | ');
+
+    expect(rendered).not.toMatch(/sekarang|menit|yang lalu|pukul/);
+  });
+});
