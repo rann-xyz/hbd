@@ -18,10 +18,20 @@
   --cream-warm:   #FBF1E9;
   --blush-deep:   #EBCBD2;
   --cocoa-soft:   #6B4F56;
-  --cocoa-faint:  rgba(81, 58, 64, 0.42);
+  /* 0.42 put the eyebrows, field labels and nav links at 2.2:1 on cream —
+     under half the contrast small text needs. 0.78 lands at 5.3:1. */
+  --cocoa-faint:  rgba(81, 58, 64, 0.78);
   --cocoa-hair:   rgba(81, 58, 64, 0.14);
   --cocoa-veil:   rgba(81, 58, 64, 0.06);
   --rose-ink:     rgba(197, 143, 153, 0.55);
+  /* Dusty rose is a fill colour: as *text* it reads at 2.6:1. This deeper
+     rose carries the handwritten voice at 4.9:1. */
+  --rose-text:    #965F6B;
+
+  /* Display ink is a shade deeper than body copy, so a heading steps forward
+     of the paragraph under it instead of sitting on the same plane. */
+  --cocoa-display: #46323A;
+  --cocoa-deep:    #3B2930;
 
   /* Focus + state inks (all readable on cream) */
   --focus:        #8A5B66;
@@ -37,8 +47,8 @@
   --tracking-button:  0.16em;
 
   /* Fluid scale — nothing jumps between breakpoints */
-  --t-hero:    clamp(2.45rem, 10.4vw, 6.75rem);
-  --t-h2:      clamp(1.7rem, 5vw, 3.25rem);
+  --t-hero:    clamp(2.85rem, 11.4vw, 7rem);
+  --t-h2:      clamp(1.75rem, 5.2vw, 3.4rem);
   --t-h3:      clamp(1.24rem, 3.2vw, 1.8rem);
   --t-lead:    clamp(1.02rem, 2.6vw, 1.2rem);
   --t-body:    clamp(0.97rem, 2.4vw, 1.06rem);
@@ -62,11 +72,20 @@
   --measure: 60ch;
   --page-max: 1180px;
 
-  /* ---- Depth: paper, never glass ---- */
-  --shadow-paper: 0 1px 2px rgba(81, 58, 64, 0.05), 0 8px 24px -12px rgba(81, 58, 64, 0.18);
-  --shadow-lift:  0 2px 4px rgba(81, 58, 64, 0.06), 0 18px 40px -18px rgba(81, 58, 64, 0.26);
+  /* ---- Depth: paper, never glass ----
+     Every surface carries two shadows: a tight contact shadow so the edge
+     reads as resting on the sheet, and a wide ambient one for lift. A single
+     blurred shadow reads as a drop-shadow filter; two read as paper. */
+  --shadow-paper: 0 1px 1px rgba(81, 58, 64, 0.04), 0 3px 6px -2px rgba(81, 58, 64, 0.05),
+                  0 14px 30px -16px rgba(81, 58, 64, 0.22);
+  --shadow-lift:  0 1px 2px rgba(81, 58, 64, 0.05), 0 8px 16px -8px rgba(81, 58, 64, 0.10),
+                  0 28px 56px -24px rgba(81, 58, 64, 0.30);
   --shadow-tape:  0 1px 3px rgba(81, 58, 64, 0.12);
   --edge:         1px solid var(--cocoa-hair);
+  --edge-warm:    1px solid rgba(81, 58, 64, 0.10);
+
+  /* A card catches the light along its top edge. */
+  --sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0) 46%);
 
   --radius-xs: 2px;
   --radius-sm: 3px;
@@ -76,6 +95,16 @@
   --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.42'/%3E%3C/svg%3E");
   --noise-soft: 0.05;
   --noise-strong: 0.085;
+
+  /* The alternating paper band that gives the long scroll its rhythm. Soft at
+     both ends on purpose: a hard edge would read as a stripe, not a sheet. */
+  --band: linear-gradient(
+    to bottom,
+    rgba(251, 241, 233, 0) 0%,
+    rgba(251, 241, 233, 0.7) 15%,
+    rgba(251, 241, 233, 0.7) 85%,
+    rgba(251, 241, 233, 0) 100%
+  );
 
   /* ---- Motion ---- */
   --ease-soft: cubic-bezier(0.22, 0.61, 0.36, 1);

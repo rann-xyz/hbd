@@ -10,6 +10,13 @@
   padding-block: var(--section-y);
 }
 
+/* Paper bands: alternating leaves give the long scroll a rhythm, so the page
+   reads as a sequence of sheets rather than one endless fill. Soft at both
+   ends — a hard edge would read as a stripe. */
+main > .section:nth-child(even) {
+  background-image: var(--band);
+}
+
 .section--tight {
   padding-block: clamp(2.5rem, 7vw, 4.5rem);
 }
@@ -67,7 +74,7 @@
 .opening__inner {
   position: relative;
   z-index: var(--z-paper);
-  max-width: min(46rem, 100%);
+  max-width: min(52rem, 100%);
 }
 
 .opening__name {
@@ -84,11 +91,26 @@
 
 /* Countdown: the digits get the widest measure on the page. */
 .countdown__grid {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--s-3) var(--s-2);
   margin-top: var(--s-4);
   max-width: 34rem;
+}
+
+/* A blush halo behind the digits, so the countdown reads as the page's centre
+   of gravity instead of four numbers on a bare sheet. It must not bleed
+   sideways: an absolutely positioned box with a negative inline inset adds to
+   the document's scrollable width even though `body` clips it. */
+.countdown__grid::before {
+  content: '';
+  position: absolute;
+  inset: -22% 0 -14%;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(232, 197, 203, 0.38), rgba(232, 197, 203, 0) 80%);
+  pointer-events: none;
 }
 
 @media (min-width: 40rem) {
@@ -109,7 +131,7 @@
 /* Portrait: figure leans, text holds the left column. */
 .portrait__figure {
   justify-self: center;
-  width: min(30rem, 100%);
+  width: min(33rem, 100%);
 }
 
 .portrait__lede {
@@ -149,7 +171,7 @@
   font-family: var(--font-display);
   font-style: italic;
   font-weight: 400;
-  font-size: clamp(1.4rem, 4.6vw, 2.35rem);
+  font-size: clamp(1.55rem, 5vw, 2.6rem);
   line-height: 1.18;
   letter-spacing: 0.004em;
   color: var(--cocoa);
@@ -161,8 +183,8 @@
   max-width: 36rem;
   margin-top: var(--s-4);
   padding: clamp(1.1rem, 3.4vw, 1.9rem);
-  background: var(--cream-warm);
-  border: var(--edge);
+  background: var(--soft-white);
+  border: var(--edge-warm);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-paper);
 }
@@ -283,8 +305,20 @@ body.is-open .opening__orn--stamp {
 
 /* Closing */
 .closing {
+  position: relative;
   text-align: center;
   padding-block: clamp(5rem, 14vw, 10rem);
+}
+
+/* The last page gets its own light, so the scroll ends somewhere rather than
+   just stopping. */
+.closing::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(58% 44% at 50% 34%, rgba(232, 197, 203, 0.38), rgba(232, 197, 203, 0) 72%);
+  pointer-events: none;
 }
 
 .closing__inner {

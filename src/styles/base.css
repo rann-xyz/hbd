@@ -54,8 +54,14 @@ body::after {
 body::before {
   z-index: 0;
   background:
+    /* blush light falling in from the top-right corner */
     radial-gradient(120% 60% at 82% -8%, rgba(232, 197, 203, 0.42), rgba(232, 197, 203, 0) 62%),
-    radial-gradient(90% 50% at -10% 8%, rgba(244, 221, 225, 0.5), rgba(244, 221, 225, 0) 58%);
+    radial-gradient(90% 50% at -10% 8%, rgba(244, 221, 225, 0.5), rgba(244, 221, 225, 0) 58%),
+    /* and a warm glow rising from the bottom, so the page does not go flat
+       and cold once the reader is deep in the scroll */
+    radial-gradient(150% 46% at 50% 104%, rgba(247, 237, 228, 0.95), rgba(247, 237, 228, 0) 62%),
+    /* a whisper of vignette, the way a sheet darkens at its edges */
+    radial-gradient(135% 105% at 50% 45%, rgba(81, 58, 64, 0) 62%, rgba(81, 58, 64, 0.045) 100%);
 }
 
 body::after {
@@ -104,8 +110,9 @@ button {
   font-family: var(--font-display);
   font-weight: 300;
   font-size: var(--t-hero);
-  line-height: var(--leading-display);
-  letter-spacing: -0.012em;
+  line-height: 0.94;
+  letter-spacing: -0.014em;
+  color: var(--cocoa-display);
   margin: 0;
   text-wrap: balance;
 }
@@ -114,8 +121,9 @@ button {
   font-family: var(--font-display);
   font-weight: 300;
   font-size: var(--t-h2);
-  line-height: 1.06;
-  letter-spacing: -0.008em;
+  line-height: 1.04;
+  letter-spacing: -0.01em;
+  color: var(--cocoa-display);
   margin: 0;
   text-wrap: balance;
 }
@@ -125,13 +133,14 @@ button {
   font-weight: 400;
   font-size: var(--t-h3);
   line-height: 1.2;
+  color: var(--cocoa-display);
   margin: 0;
 }
 
 /* The single italic accent we allow inside a heading. */
 .accent {
   font-style: italic;
-  color: var(--dusty-rose);
+  color: var(--rose-text);
 }
 
 .eyebrow {
@@ -142,6 +151,24 @@ button {
   text-transform: uppercase;
   color: var(--cocoa-faint);
   margin: 0;
+}
+
+/* A short rule leads the eyebrow in the left-aligned editorial sections: a
+   magazine device that also gives the eye somewhere to start. Centred pages
+   (the closing) keep it bare. */
+.eyebrow::before {
+  content: '';
+  display: inline-block;
+  width: clamp(1.2rem, 4.5vw, 2.4rem);
+  height: 1px;
+  margin-right: 0.8em;
+  vertical-align: 0.32em;
+  background: currentColor;
+  opacity: 0.6;
+}
+
+.closing .eyebrow::before {
+  display: none;
 }
 
 .lead {
@@ -168,7 +195,7 @@ button {
   font-size: var(--t-hand);
   font-weight: 400;
   line-height: 1.35;
-  color: var(--dusty-rose);
+  color: var(--rose-text);
   margin: 0;
 }
 
@@ -185,7 +212,7 @@ button {
 .ornament-word {
   font-family: var(--font-display);
   font-style: italic;
-  color: var(--dusty-rose);
+  color: var(--rose-text);
 }
 
 /* ---------- Structure helpers ---------- */
@@ -291,7 +318,7 @@ button {
 }
 
 .site-nav__mark span {
-  color: var(--dusty-rose);
+  color: var(--rose-text);
   font-style: normal;
   padding-inline: 0.15em;
 }
