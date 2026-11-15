@@ -6,7 +6,13 @@
    ============================================================ */
 
 import { BIRTHDAY, COUNTDOWN_COPY } from '../content';
-import { getCountdownState, padParts, describeRemaining, COUNTDOWN_UNITS } from '../lib/countdown';
+import {
+  getCountdownState,
+  padParts,
+  describeRemaining,
+  describeAnnouncement,
+  COUNTDOWN_UNITS,
+} from '../lib/countdown';
 import { el, setHidden, setText } from '../lib/dom';
 import { pulseClass } from '../lib/motion';
 import { bow } from '../lib/svg';
@@ -73,7 +79,8 @@ export function buildCountdown(nowSource: () => Date = () => new Date()): Countd
     grid.append(el('div', { className: 'countdown__unit', children: [value, label] }));
   }
 
-  // The visible digits are decorative; this region speaks the real value.
+  // The visible digits are decorative; this region speaks the real value — at
+  // minute granularity, so it does not announce once a second.
   const live = el('p', { className: 'sr-only', attrs: { 'aria-live': 'polite', 'aria-atomic': 'true' } });
 
   const celebration = el('div', {
@@ -122,7 +129,15 @@ export function buildCountdown(nowSource: () => Date = () => new Date()): Countd
       renderDigits(units.get('hours')?.value ?? grid, padded.hours);
       renderDigits(units.get('minutes')?.value ?? grid, padded.minutes);
       renderDigits(units.get('seconds')?.value ?? grid, padded.seconds);
-      setText(live, `${COUNTDOWN_COPY.ariaLivePrefix} ${describeRemaining(state.parts, UNIT_LABELS)}`);
+
+      const sentence = describeAnnouncement(state.parts, UNIT_LABELS);
+      if (sentence !== null) {
+        setText(live, `${COUNTDOWN_COPY.ariaLivePrefix} ${sentence}`);
+      } else if (live.textContent === '') {
+        // Opened inside the final minute: there is nothing coarser to say, but
+        // an empty live region says nothing at all.
+        setText(live, `${COUNTDOWN_COPY.ariaLivePrefix} ${describeRemaining(state.parts, UNIT_LABELS)}`);
+      }
       return;
     }
 

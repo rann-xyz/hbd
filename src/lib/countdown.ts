@@ -129,3 +129,25 @@ export function describeRemaining(parts: CountdownParts, labels: Record<Countdow
 export function msUntilNextSecond(now: Date): number {
   return SECOND - (now.getTime() % SECOND);
 }
+
+/**
+ * The sentence the live region should speak — at the granularity a screen reader
+ * can actually live with.
+ *
+ * `describeRemaining` includes the seconds, which is right for a label and wrong
+ * for a live region: the text changes on every tick, so the region fires an
+ * announcement every second and talks over every other element the listener
+ * moves to. Dropping the seconds makes the sentence stable for a whole minute,
+ * so it changes once when the minute does.
+ *
+ * Under a minute there is no coarser sentence left to give — the fallback would
+ * be "0 seconds" — so this returns null and the caller keeps whatever it last
+ * announced.
+ */
+export function describeAnnouncement(
+  parts: CountdownParts,
+  labels: Record<CountdownUnit, string>,
+): string | null {
+  if (parts.days === 0 && parts.hours === 0 && parts.minutes === 0) return null;
+  return describeRemaining({ ...parts, seconds: 0 }, labels);
+}
