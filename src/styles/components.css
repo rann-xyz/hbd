@@ -1043,7 +1043,10 @@ body.is-letter-open .letter {
   font-family: var(--font-hand);
   font-size: clamp(1.5rem, 5.5vw, 2.15rem);
   line-height: 1.1;
-  color: var(--rose-ink);
+  /* The text token, not the fill token. `--rose-ink` is a 55%-alpha wash meant
+     to sit behind things; as ink on the cream page it reads at 1.63:1, and this
+     line is 24px of real words. tokens.css says as much next to the token. */
+  color: var(--rose-text);
   text-align: center;
   visibility: hidden;
   opacity: 0;
