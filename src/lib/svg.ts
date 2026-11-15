@@ -293,3 +293,41 @@ export function note(size = 16): SVGSVGElement {
     ],
   });
 }
+
+/**
+ * A party hat, to sit on the head in the photograph.
+ *
+ * Drawn, never baked in: the picture is the one real photograph on the page and
+ * nothing here touches its pixels. The cone is a hair off-centre (apex at 52.4,
+ * base centre at 52.5) and the base sags below the line, the way the pennants in
+ * `bunting` do, so it reads as drawn rather than generated.
+ *
+ * The stripes are the cone's own edges sampled at their top and bottom rows and
+ * pulled in 1.5 units, which is why they taper with the cone instead of running
+ * off the silhouette.
+ */
+export function partyHat(size = 100): SVGSVGElement {
+  return svg({
+    viewBox: '0 0 100 110',
+    width: size,
+    height: Math.round((size * 110) / 100),
+    className: 'portrait__hat-art',
+    paths: [
+      // The cone.
+      {
+        d: 'M52.4 7.2 90 100.4c-12.6 2.6-25.2 3.8-37.8 3.6-12.4-.2-24.8-1.4-37.2-3.6Z',
+        fill: '#F4DDE1',
+        stroke: '#C58F99',
+        strokeWidth: 1.2,
+      },
+      // Three stripes, following the taper.
+      { d: 'M47.2 24 57.7 24 64.9 42 39.9 42Z', fill: '#E8C5CB' },
+      { d: 'M36.7 50 68.2 50 75.4 68 29.5 68Z', fill: '#E8C5CB' },
+      { d: 'M26.3 76 78.7 76 85.9 94 19.1 94Z', fill: '#E8C5CB' },
+      // A rim along the base, so the hat has a hem.
+      { d: 'M18.4 96.6c11.6 2 23.2 3.1 34.8 3.3 11.8.2 23.6-1 35.4-3.3', stroke: '#C58F99', strokeWidth: 1 },
+      // The pom-pom on the tip.
+      { d: 'M46.2 6.6a6 6 0 1 0 12 0 6 6 0 1 0-12 0Z', fill: '#E8C5CB', stroke: '#C58F99', strokeWidth: 1 },
+    ],
+  });
+}

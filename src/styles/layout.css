@@ -219,6 +219,33 @@ main > .section:nth-child(even) {
   position: relative;
 }
 
+/*
+ * The birthday hat, sitting on the head in the photograph.
+ *
+ * The numbers are measured off the picture, not guessed: in the 720x1280 frame
+ * her hair starts at y=138 and the crown is at x=324, so the hat's base sits at
+ * 12.9% down and 45% across, at 20.2% of the frame's width — which leaves the
+ * tip just inside the top edge, and puts it back on her head at every width the
+ * print is rendered at. Anchored by its own bottom centre, so the tilt turns
+ * around the point where it meets her hair instead of swinging the base away.
+ */
+.portrait__hat {
+  position: absolute;
+  left: 45%;
+  top: 12.9%;
+  width: 20.2%;
+  transform: translate(-50%, -100%) rotate(-7deg);
+  transform-origin: 50% 100%;
+  pointer-events: none;
+  filter: drop-shadow(0 3px 5px rgba(81, 58, 64, 0.18));
+}
+
+.portrait__hat-art {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 .portrait__stamp {
   bottom: -2.1rem;
   left: -1.1rem;

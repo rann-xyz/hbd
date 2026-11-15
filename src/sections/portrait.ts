@@ -7,7 +7,7 @@
 
 import { PORTRAIT, PORTRAIT_SECTION, RECIPIENT } from '../content';
 import { el } from '../lib/dom';
-import { bow } from '../lib/svg';
+import { bow, partyHat } from '../lib/svg';
 
 export function buildPortrait(): HTMLElement {
   const eyebrow = el('p', { className: 'eyebrow', text: PORTRAIT_SECTION.eyebrow, attrs: { 'data-reveal': '' } });
@@ -74,7 +74,21 @@ export function buildPortrait(): HTMLElement {
     className: 'polaroid polaroid--lift-right spread__figure portrait__figure',
     attrs: { 'data-reveal': '' },
     children: [
-      el('div', { className: 'polaroid__frame', children: [image] }),
+      el('div', {
+        className: 'polaroid__frame',
+        children: [
+          image,
+          // A birthday hat, drawn over the print rather than into it. It lives
+          // inside the frame so the photo's own bounds clip it, and it is
+          // positioned as a percentage of the frame so it stays on her head at
+          // every width the print is rendered at.
+          el('div', {
+            className: 'portrait__hat',
+            attrs: { 'aria-hidden': 'true' },
+            children: [partyHat(100)],
+          }),
+        ],
+      }),
       el('span', { className: 'tape tape--tl', attrs: { 'aria-hidden': 'true' } }),
       el('span', { className: 'tape tape--tr', attrs: { 'aria-hidden': 'true' } }),
       el('figcaption', { text: PORTRAIT_SECTION.caption }),
