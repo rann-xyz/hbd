@@ -307,6 +307,7 @@ button {
 }
 
 .site-nav__mark {
+  position: relative;
   flex: 0 0 auto;
   font-family: var(--font-display);
   font-size: clamp(0.98rem, 2.6vw, 1.15rem);
@@ -328,6 +329,17 @@ button {
   gap: clamp(0.75rem, 2.6vw, 1.6rem);
   overflow-x: auto;
   scrollbar-width: none;
+  /* `overflow-x: auto` clips on both axes — the computed overflow-y is `auto`
+     too, whatever the source says. That clip is what the 44px hit areas below
+     ran into: they grew 3.5px past the links and were cut off at the strip, so
+     the links stayed 37px tall under a thumb while the wordmark next to them
+     got the full 44. Padding gives the pseudo-elements somewhere to live; the
+     matching negative margin takes the same amount back, so nothing moves and
+     the fixed bar keeps its 64px. 0.3rem rather than 0.25: the overhang is
+     `(100% - 2.75rem) / 2` against the link's *padding* box, which is 4.1px for
+     a 36.8px link — a hair more than four. */
+  padding-block: 0.3rem;
+  margin-block: -0.3rem;
 }
 
 .site-nav__links::-webkit-scrollbar {
@@ -335,6 +347,7 @@ button {
 }
 
 .site-nav__links a {
+  position: relative;
   font-size: var(--t-eyebrow);
   letter-spacing: var(--tracking-eyebrow);
   text-transform: uppercase;
@@ -344,6 +357,20 @@ button {
   padding-block: 0.5rem;
   border-bottom: 1px solid transparent;
   transition: color var(--dur-fast) var(--ease-soft), border-color var(--dur-fast) var(--ease-soft);
+}
+
+/* A thumb is not a cursor. The wordmark stands 27px tall and the nav links
+   34px — a miss waiting to happen on a phone. Growing the boxes themselves
+   would push the fixed bar down over the page, so the hit area grows instead:
+   a transparent pseudo-element stretched to exactly 44px, centred, moving
+   nothing. `(100% - 2.75rem) / 2` is negative for anything shorter than 44px,
+   which is why one rule fits both. */
+.site-nav__mark::after,
+.site-nav__links a::after {
+  content: '';
+  position: absolute;
+  inset-block: calc((100% - 2.75rem) / 2);
+  inset-inline: -0.25rem;
 }
 
 .site-nav__links a:hover,

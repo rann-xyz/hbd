@@ -53,7 +53,11 @@
   --t-lead:    clamp(1.02rem, 2.6vw, 1.2rem);
   --t-body:    clamp(0.97rem, 2.4vw, 1.06rem);
   --t-small:   clamp(0.78rem, 2vw, 0.86rem);
-  --t-eyebrow: clamp(0.62rem, 1.7vw, 0.72rem);
+  /* The tracked caps (eyebrows, nav links, button labels, countdown labels)
+     were 9.9px on a 390px phone: legible in a mockup, a squint on a real
+     screen held at arm's length. The floor is the phone size, so it is the
+     one that had to move — 11.5px there, and a hair more on desktop. */
+  --t-eyebrow: clamp(0.72rem, 1.8vw, 0.78rem);
   --t-hand:    clamp(1.1rem, 3.2vw, 1.55rem);
   --t-digit:   clamp(2.1rem, 8.4vw, 4.4rem);
 
