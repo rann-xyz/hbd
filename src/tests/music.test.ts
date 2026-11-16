@@ -10,12 +10,15 @@ import {
   PIANO_PARTIALS,
   PHRASE_STARTS,
   createMusicBox,
+  createRecordingBox,
+  createTunePlayer,
   isAudioSupported,
   loopSeconds,
   midiToFrequency,
   partialFrequency,
   silentMusicBox,
   totalBeats,
+  tuneRecording,
 } from '../lib/music';
 import type { StorageLike } from '../lib/storage';
 import { buildMusicControl } from '../sections/music';
@@ -337,6 +340,86 @@ describe('the piano', () => {
     const bassTail = envelopeOf(fake, HAPPY_BIRTHDAY.length).calls.at(-1)?.time ?? 0;
 
     expect(bassTail).toBeGreaterThan(melodyTail);
+  });
+});
+
+describe('a real recording, when the page has one', () => {
+  /** jsdom has no media pipeline: play and pause are stubs to be watched. */
+  function stubMedia(): { play: ReturnType<typeof vi.fn>; pause: ReturnType<typeof vi.fn> } {
+    const play = vi.fn(() => Promise.resolve());
+    const pause = vi.fn();
+    vi.spyOn(window.HTMLMediaElement.prototype, 'play').mockImplementation(play);
+    vi.spyOn(window.HTMLMediaElement.prototype, 'pause').mockImplementation(pause);
+    return { play, pause };
+  }
+
+  it('is not there yet, so the tune is the one this page makes itself', () => {
+    // The folder is empty in this repo, which is the state the tests below
+    // depend on: drop an mp3 in src/audio and this expectation is the one that
+    // should fail first.
+    expect(tuneRecording()).toBeNull();
+
+    const fake = fakeContext();
+    const player = createTunePlayer({ contextFactory: () => fake.context, storage: fakeStorage() });
+    player.play();
+
+    expect(fake.voices.length).toBeGreaterThan(0);
+  });
+
+  it('plays the recording as it is, and loops it', () => {
+    const media = stubMedia();
+    const box = createRecordingBox({ src: 'audio/tune.mp3' });
+
+    expect(box.available).toBe(true);
+    expect(box.isPlaying()).toBe(false);
+
+    box.play();
+    expect(media.play).toHaveBeenCalledTimes(1);
+    expect(box.isPlaying()).toBe(true);
+
+    // The element it made is the one that loops: a recording with an ending
+    // would fall silent on a page that is meant to be a room.
+    expect(box.isPlaying()).toBe(true);
+    box.pause();
+    expect(media.pause).toHaveBeenCalledTimes(1);
+    expect(box.isPlaying()).toBe(false);
+  });
+
+  it('tells the shell whenever it starts and stops', () => {
+    stubMedia();
+    const onStateChange = vi.fn();
+    const box = createRecordingBox({ src: 'audio/tune.mp3', onStateChange });
+
+    box.toggle();
+    box.toggle();
+    expect(onStateChange.mock.calls).toEqual([[true], [false]]);
+  });
+
+  it('takes the button back down when the browser refuses to play it', async () => {
+    vi.spyOn(window.HTMLMediaElement.prototype, 'play').mockImplementation(() =>
+      Promise.reject(new Error('NotAllowedError')),
+    );
+    const onStateChange = vi.fn();
+    const box = createRecordingBox({ src: 'audio/tune.mp3', onStateChange });
+
+    box.play();
+    expect(box.isPlaying()).toBe(true); // optimistic, so the button answers at once
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(box.isPlaying()).toBe(false);
+    expect(onStateChange.mock.calls).toEqual([[true], [false]]);
+  });
+
+  it('stops for good once it is destroyed', () => {
+    const media = stubMedia();
+    const box = createRecordingBox({ src: 'audio/tune.mp3' });
+    box.play();
+    box.destroy();
+
+    expect(media.pause).toHaveBeenCalled();
+    box.play();
+    expect(media.play).toHaveBeenCalledTimes(1);
   });
 });
 

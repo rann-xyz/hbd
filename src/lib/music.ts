@@ -187,6 +187,108 @@ export function partialFrequency(midi: number, ratio: number): number {
 
 /* ------------------------------------------------------------------ */
 
+/**
+ * A real recording of the tune, if one has been dropped into `src/audio`.
+ *
+ * The tune is synthesised by default — nothing to download on a phone
+ * connection, nothing to license — but a recording of a real piano beats any
+ * amount of synthesis, and the page uses one the moment it is there. Whatever
+ * goes in that folder has to be a recording the page is allowed to serve: the
+ * melody is public domain, the performance is somebody's.
+ */
+const RECORDINGS = import.meta.glob('../audio/*.{mp3,ogg,m4a}', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+}) as Record<string, string>;
+
+/** The URL of the recording to play, or null to play the synthesised tune. */
+export function tuneRecording(): string | null {
+  const first = Object.values(RECORDINGS)[0];
+  return typeof first === 'string' ? first : null;
+}
+
+export interface RecordingBoxOptions {
+  readonly src: string;
+  /** Called whenever playback starts or stops, so the button can follow. */
+  readonly onStateChange?: (playing: boolean) => void;
+}
+
+/**
+ * A recording, played as it is. No synthesis and no room of our own: it
+ * arrives with its own performance, its own instrument and its own space, and
+ * the honest thing is to stay out of the way.
+ *
+ * It needs no Web Audio at all, so a browser that cannot synthesise can still
+ * play this.
+ */
+export function createRecordingBox(options: RecordingBoxOptions): MusicBox {
+  const audio = new Audio();
+  audio.src = options.src;
+  audio.loop = true;
+  audio.preload = 'auto';
+
+  let playing = false;
+  let destroyed = false;
+
+  const announce = (): void => options.onStateChange?.(playing);
+
+  const play = (): void => {
+    if (destroyed || playing) return;
+    playing = true;
+    const started = audio.play();
+    // A browser that refuses (no gesture yet, or a codec it cannot decode)
+    // hands back a rejected promise; one that is too old to promise hands back
+    // nothing at all. Either way the button must not claim to be playing.
+    if (started && typeof started.catch === 'function') {
+      started.catch(() => {
+        playing = false;
+        announce();
+      });
+    }
+    announce();
+  };
+
+  const pause = (): void => {
+    if (!playing) return;
+    playing = false;
+    audio.pause();
+    announce();
+  };
+
+  return {
+    available: true,
+    isPlaying: () => playing,
+    play,
+    pause,
+    toggle(): boolean {
+      if (playing) {
+        pause();
+        return false;
+      }
+      play();
+      return playing;
+    },
+    destroy(): void {
+      destroyed = true;
+      pause();
+      audio.removeAttribute('src');
+    },
+  };
+}
+
+/**
+ * The tune, however it is going to be played: a recording when the page has
+ * one, the synthesised piano when it does not.
+ */
+export function createTunePlayer(options: MusicBoxOptions = {}): MusicBox {
+  const src = tuneRecording();
+  if (src) return createRecordingBox({ src, onStateChange: options.onStateChange });
+  return createMusicBox(options);
+}
+
+/* ------------------------------------------------------------------ */
+
 type AudioContextCtor = new () => AudioContext;
 
 function findAudioContext(): AudioContextCtor | null {

@@ -6,7 +6,7 @@
 
 import { BUILT_SECTIONS, COUNTDOWN_COPY, FOOT, RECIPIENT, navEntriesFor } from './content';
 import { clear, el, qs, setHidden, toggleClass } from './lib/dom';
-import { createMusicBox, TUNE_REQUEST_EVENT, type MusicBox } from './lib/music';
+import { createTunePlayer, TUNE_REQUEST_EVENT, type MusicBox } from './lib/music';
 import { prefersReducedMotion, revealOnScroll, scrollToElement } from './lib/motion';
 import { sprig } from './lib/svg';
 import { buildCake } from './sections/cake';
@@ -286,11 +286,12 @@ export function boot(
   }
 
   // The birthday tune. A runtime without Web Audio simply never gets the
-  // control, rather than getting a button that does nothing.
+  // control, rather than getting a button that does nothing — unless the page
+  // has a real recording, which needs no synthesis at all.
   let musicControl: MusicControlHandle | null = null;
   const music: MusicBox =
     options.musicBox ??
-    createMusicBox({
+    createTunePlayer({
       // Starting the tune can take a moment (the browser may have to resume a
       // suspended context), so the button follows the box rather than assuming
       // the play() call landed.
