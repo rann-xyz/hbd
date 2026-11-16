@@ -238,6 +238,26 @@ export const FOOT = {
   note: 'no templates, no shortcuts, one photograph',
 } as const;
 
+/**
+ * The little resident at the foot of the opening page. Tapping it is the one
+ * interaction on this site that asks nothing of you: it says something small
+ * and stays put. The lines are cycled in order, never picked at random, so the
+ * same tap always gets the same answer and the last one wraps round.
+ *
+ * No emoji anywhere in here — the house rule for every string on the page.
+ */
+export const MASCOT = {
+  aria: 'Boop the little friend',
+  hint: 'boop me',
+  lines: [
+    'boop. careful, I am ticklish.',
+    'you are the birthday girl. I checked twice.',
+    'I helped with the cake. Mostly by watching.',
+    'he built me on a phone, with one thumb.',
+    'if you are reading this, you are loved. I do not make the rules.',
+  ],
+} as const;
+
 export const MUSIC = {
   /** The control is a single button, so its label carries the whole meaning. */
   playLabel: 'Play the birthday song',

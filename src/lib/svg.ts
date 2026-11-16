@@ -12,6 +12,8 @@ export interface PathSpec {
   readonly stroke?: string;
   readonly strokeWidth?: number;
   readonly fillOpacity?: number;
+  /** Optional hook for tests and CSS — `face__eye`, `face__blush`. */
+  readonly className?: string;
 }
 
 export interface SvgGroupSpec {
@@ -34,6 +36,7 @@ export interface SvgSpec {
 function applyPaint(node: SVGPathElement, spec: PathSpec): void {
   node.setAttribute('d', spec.d);
   node.setAttribute('fill', spec.fill ?? 'none');
+  if (spec.className) node.setAttribute('class', spec.className);
   if (spec.stroke) {
     node.setAttribute('stroke', spec.stroke);
     node.setAttribute('stroke-width', String(spec.strokeWidth ?? 1.2));
@@ -152,11 +155,155 @@ export function arrow(size = 18): SVGSVGElement {
   });
 }
 
+/* ============================================================
+   THE GEMES LAYER — faces, hearts, and one small resident.
+
+   Everything here is drawn with the same crooked hand as the rest of the
+   ornaments: no perfect circle, nothing centred to the decimal, and the
+   blush always a little off. A face is what turns a drawing of an object
+   into someone you want to poke, which is the whole point of this file.
+   ============================================================ */
+
+/** The two inks a face is drawn in. Both are tokens; no new colour is invented. */
+const FACE_INK = '#513A40';
+const FACE_BLUSH = '#E8C5CB';
+
+export interface FaceOptions {
+  /** Centre of the face, in the caller's own viewBox units. */
+  readonly x: number;
+  readonly y: number;
+  readonly scale?: number;
+  /** `open` is two dots; `happy` closes both eyes; `wink` closes the left one. */
+  readonly mood?: 'open' | 'happy' | 'wink';
+  /** Drop this first at very small sizes — a blush needs room to read. */
+  readonly blush?: boolean;
+}
+
+/** Two decimals: enough for a curve, short enough to read in the source. */
+function r2(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+/**
+ * A kawaii face — two eyes, a small smile, two blush cheeks — centred on
+ * (x, y) in the caller's viewBox. Returned as paths so any ornament can
+ * compose it: the cake, a balloon, or the little resident below.
+ */
+export function face(options: FaceOptions): PathSpec[] {
+  const { x, y, scale = 1, mood = 'open', blush = true } = options;
+  const px = (n: number): number => r2(x + n * scale);
+  const py = (n: number): number => r2(y + n * scale);
+  const eye = r2(1.5 * scale);
+  const paths: PathSpec[] = [];
+
+  const dot = (cx: number): PathSpec => ({
+    d: `M${r2(cx - eye)} ${py(0)}a${eye} ${eye} 0 1 0 ${r2(eye * 2)} 0a${eye} ${eye} 0 1 0 ${r2(-eye * 2)} 0Z`,
+    fill: FACE_INK,
+    className: 'face__eye',
+  });
+
+  /** The upward arc an eye makes when a face is pleased. */
+  const arc = (cx: number): PathSpec => ({
+    d: `M${r2(cx - eye * 1.1)} ${py(0.5)}q${r2(eye * 1.1)} ${r2(-eye * 1.6)} ${r2(eye * 2.2)} 0`,
+    stroke: FACE_INK,
+    strokeWidth: r2(1.1 * scale),
+    className: 'face__eye face__eye--happy',
+  });
+
+  if (mood === 'open') paths.push(dot(px(-3.4)), dot(px(3.4)));
+  else if (mood === 'happy') paths.push(arc(px(-3.4)), arc(px(3.4)));
+  else paths.push(arc(px(-3.4)), dot(px(3.4)));
+
+  // The smile: short, a touch off-centre, and never a straight line.
+  paths.push({
+    d: `M${px(-1.9)} ${py(2.1)}q${r2(1.9 * scale)} ${r2(1.8 * scale)} ${r2(3.8 * scale)} 0`,
+    stroke: FACE_INK,
+    strokeWidth: r2(1.1 * scale),
+    className: 'face__smile',
+  });
+
+  if (blush) {
+    for (const side of [-1, 1]) {
+      const cx = px(side * 6.6);
+      const cy = py(1.9);
+      const rx = r2(2.3 * scale);
+      const ry = r2(1.3 * scale);
+      paths.push({
+        d: `M${r2(cx - rx)} ${cy}a${rx} ${ry} 0 1 0 ${r2(rx * 2)} 0a${rx} ${ry} 0 1 0 ${r2(-rx * 2)} 0Z`,
+        fill: FACE_BLUSH,
+        fillOpacity: 0.9,
+        className: 'face__blush',
+      });
+    }
+  }
+
+  return paths;
+}
+
+/** A hand-drawn heart. Filled, because a heart is a shape and not an outline. */
+export function heart(size = 16, fill = 'currentColor'): SVGSVGElement {
+  return svg({
+    viewBox: '0 0 20 20',
+    width: size,
+    height: size,
+    paths: [
+      {
+        d: 'M10 17.4C4.2 13.1 1.6 9.9 2.1 7c.4-2.4 2.6-3.6 4.6-2.7 1.2.5 1.9 1.4 2.3 2.4.5-1.1 1.3-2 2.5-2.4 2-.8 4.1.4 4.5 2.8.5 2.9-2.1 6.1-7.9 10.3Z',
+        fill,
+      },
+      { d: 'M6.2 6.4c-1 .3-1.6 1.1-1.7 2.2', stroke: '#FFF9F4', strokeWidth: 0.9 },
+    ],
+  });
+}
+
+/**
+ * The little resident: a soft round creature with a bow, two dot eyes, blush
+ * in the cheeks and a heart held out in one hand. It sits at the foot of the
+ * opening page and is the one thing here that asks nothing of you.
+ *
+ * `mood` changes only the eyes — `open` for the one you can boop, `happy`
+ * for the one that waves goodbye on the last page.
+ */
+export function mascot(size = 76, mood: 'open' | 'happy' = 'open'): SVGSVGElement {
+  return svg({
+    viewBox: '0 0 100 100',
+    width: size,
+    height: size,
+    className: 'mascot__art',
+    paths: [
+      // Two ears, behind the body, so only their tops show.
+      { d: 'M26.8 23.4a6.8 6.8 0 1 0 13.6 0 6.8 6.8 0 1 0-13.6 0Z', fill: '#FFF9F4', stroke: '#C58F99', strokeWidth: 1.2 },
+      { d: 'M59.6 23.4a6.8 6.8 0 1 0 13.6 0 6.8 6.8 0 1 0-13.6 0Z', fill: '#FFF9F4', stroke: '#C58F99', strokeWidth: 1.2 },
+      // The body: an egg with a wobble on the left, because a true oval reads
+      // as a shape and this has to read as a someone.
+      { d: 'M50 20.4c17.2-.6 30.6 12.4 30.6 31.2 0 19.4-13.6 32.4-30.6 32.4S19.4 71 19.4 51.6c0-18.8 13.4-30.6 30.6-31.2Z', fill: '#FFF9F4', stroke: '#C58F99', strokeWidth: 1.4 },
+      // Feet.
+      { d: 'M33.6 82.4a7.2 4.6 0 1 0 14.4 0 7.2 4.6 0 1 0-14.4 0Z', fill: '#F4DDE1', stroke: '#C58F99', strokeWidth: 1.1 },
+      { d: 'M52 82.4a7.2 4.6 0 1 0 14.4 0 7.2 4.6 0 1 0-14.4 0Z', fill: '#F4DDE1', stroke: '#C58F99', strokeWidth: 1.1 },
+      // Arms.
+      { d: 'M20.4 52.6c-4.6 1.4-7.4 4.6-8.4 9.2', stroke: '#C58F99', strokeWidth: 1.3 },
+      { d: 'M79.6 52.6c4.6 1.4 7.4 4.6 8.4 9.2', stroke: '#C58F99', strokeWidth: 1.3 },
+      // A bow, sitting between the ears.
+      { d: 'M50 12.6c-5.4-6.6-12.8-5.2-10.6.2-2 4.9 5.4 6 10.6-.2Z', fill: '#E8C5CB', stroke: '#C58F99', strokeWidth: 1 },
+      { d: 'M50 12.6c5.4-6.6 12.8-5.2 10.6.2 2 4.9-5.4 6-10.6-.2Z', fill: '#E8C5CB', stroke: '#C58F99', strokeWidth: 1 },
+      { d: 'M50 12.4a1.4 1.4 0 1 0 .1 2.8 1.4 1.4 0 0 0-.1-2.8Z', fill: '#C58F99' },
+      // The face — the whole point of the creature.
+      ...face({ x: 50, y: 46, scale: 1.55, mood, blush: true }),
+      // A heart, held out in the right hand.
+      { d: 'M84.6 68.4c-4.4-3.3-6.4-5.8-6-8 .3-1.8 2-2.7 3.5-2 1 .4 1.5 1.1 1.7 1.8.4-.8 1-1.5 1.9-1.8 1.5-.6 3.2.3 3.4 2.1.4 2.2-1.6 4.7-6 8Z', fill: '#E8C5CB', stroke: '#C58F99', strokeWidth: 1 },
+    ],
+  });
+}
+
 /**
  * Hand-drawn birthday cake: two tiers, drip icing, cherries, sprinkles, a
  * doily — and a slice that comes out of it. The slice and the gap it leaves
  * behind are separate groups so the section can move one and reveal the
  * other; nothing here is animated by the drawing itself.
+ *
+ * The top tier has a face. It is the one decoration on this page that looks
+ * back at you, and it sits high enough on the tier to clear the icing, the
+ * cherries and the cut.
  */
 export function cake(size = 240): SVGSVGElement {
   return svg({
@@ -181,6 +328,9 @@ export function cake(size = 240): SVGSVGElement {
       { d: 'M49.6 49.8c.4-2 1.6-3.4 3.6-4.2M70.8 49.8c-.4-2-1.6-3.4-3.6-4.2', stroke: '#C58F99', strokeWidth: 0.9 },
       // Sprinkles.
       { d: 'M32.6 95.4c1.6-1.2 3.2-2.4 4.8-3.4M44.2 101.6c1.8-.8 3.6-1.6 5.4-2.2M58.6 92.4c1.4 1.4 2.8 2.6 4.2 3.8M70.4 100.2c1.8-.6 3.6-1.2 5.4-1.6M84.2 94.6c1.2 1.6 2.4 3 3.6 4.4M38.4 106.4c1.6-.6 3.2-1 4.8-1.4M76.6 106.8c1.4-.8 2.8-1.4 4.2-1.8', stroke: '#E8C5CB', strokeWidth: 1.6 },
+      // The face. Centred on the top tier's front, below the cherries and
+      // above the tier's own bottom edge — 20 units wide on a 120-unit cake.
+      ...face({ x: 60, y: 62.6, scale: 1.05 }),
     ],
     groups: [
       {
@@ -236,7 +386,9 @@ export function bunting(size = 320): SVGSVGElement {
   });
 }
 
-/** One balloon on a string. Coloured by the caller so the bunch can vary. */
+/** One balloon on a string. Coloured by the caller so the bunch can vary.
+ *  Every balloon has a face, which is why popping one is funny and not just
+ *  a state change. */
 export function balloon(size = 44, fill = '#F4DDE1'): SVGSVGElement {
   return svg({
     viewBox: '0 0 40 62',
@@ -246,6 +398,8 @@ export function balloon(size = 44, fill = '#F4DDE1'): SVGSVGElement {
     paths: [
       { d: 'M20 2.8c8.2 0 14.4 6.6 14.4 15.2 0 9.4-8.2 17-14.4 19.2C13.8 35 5.6 27.4 5.6 18 5.6 9.4 11.8 2.8 20 2.8Z', fill, stroke: '#C58F99', strokeWidth: 1.2 },
       { d: 'M13.6 12.4c-1.4 2.4-1.8 5-1.2 7.8', stroke: '#FFF9F4', strokeWidth: 1.6 },
+      // The face sits clear of the highlight, which runs down the left edge.
+      ...face({ x: 20, y: 21.4, scale: 1 }),
       { d: 'M17.6 37.8c1.6-1.4 3.2-1.4 4.8 0-1.6 1.8-3.2 1.8-4.8 0Z', fill: '#E8C5CB', stroke: '#C58F99', strokeWidth: 0.9 },
       { d: 'M20 39.8c-2.8 6.6 2.8 12.6 0 19.2', stroke: '#C58F99', strokeWidth: 1 },
     ],

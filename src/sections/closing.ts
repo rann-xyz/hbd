@@ -7,13 +7,13 @@
 import { CLOSING, PORTRAIT } from '../content';
 import { el, qs } from '../lib/dom';
 import { scrollToElement } from '../lib/motion';
-import { bow, sprig, star } from '../lib/svg';
+import { bow, heart, mascot as mascotArt, sprig, star } from '../lib/svg';
 
 export function buildClosing(): HTMLElement {
   const bloom = el('div', {
     className: 'closing__bloom',
     attrs: { 'aria-hidden': 'true' },
-    children: [star(14), star(20), star(14)],
+    children: [star(14), heart(19), star(14)],
   });
 
   const eyebrow = el('p', { className: 'eyebrow', text: CLOSING.eyebrow, attrs: { 'data-reveal': '' } });
@@ -69,6 +69,15 @@ export function buildClosing(): HTMLElement {
     if (opening) scrollToElement(opening, title ?? undefined);
   });
 
+  // The same creature that sat at the start of the page, waving the reader
+  // off. Decoration here, not a control: on the last page there is nothing
+  // left to ask of anyone.
+  const farewell = el('span', {
+    className: 'closing__mascot',
+    attrs: { 'aria-hidden': 'true' },
+    children: [mascotArt(84, 'happy')],
+  });
+
   const inner = el('div', {
     className: 'closing__inner',
     children: [
@@ -83,6 +92,7 @@ export function buildClosing(): HTMLElement {
       figure,
       signOff,
       signature,
+      farewell,
       restart,
     ],
   });

@@ -18,6 +18,7 @@ import {
   bunting as buntingArt,
   cake as cakeArt,
   flame,
+  heart,
   star,
 } from '../lib/svg';
 
@@ -192,19 +193,24 @@ export function buildCake(): CakeHandle {
     while (confetti.firstChild) confetti.removeChild(confetti.firstChild);
   };
 
-  /** A throw of confetti, spread across the stage. Returns how many fell. */
+  /** A throw of confetti, spread across the stage. Returns how many fell.
+   *  Every sixth piece is a heart: the same throw, with something in it to
+   *  catch. */
   const throwConfetti = (): number => {
     if (prefersReducedMotion()) return 0;
     clearConfetti();
     for (let index = 0; index < CONFETTI_COUNT; index += 1) {
+      const colour = CONFETTI_COLOURS[index % CONFETTI_COLOURS.length] ?? '#F4DDE1';
+      const isHeart = index % 6 === 0;
       const piece = el('span', {
-        className: 'cake__confetti-piece',
+        className: isHeart ? 'cake__confetti-piece cake__confetti-piece--heart' : 'cake__confetti-piece',
         attrs: {
           'aria-hidden': 'true',
           style:
             `--i:${index}; --x:${(index * 37) % 100}%; --drift:${((index % 7) - 3) * 16}px;` +
-            ` --spin:${120 + (index % 5) * 90}deg; --colour:${CONFETTI_COLOURS[index % CONFETTI_COLOURS.length] ?? '#F4DDE1'}`,
+            ` --spin:${120 + (index % 5) * 90}deg; --colour:${colour}`,
         },
+        children: isHeart ? [heart(12, colour)] : undefined,
       });
       confetti.append(piece);
     }

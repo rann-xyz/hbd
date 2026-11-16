@@ -89,6 +89,19 @@ main > .section:nth-child(even) {
   gap: var(--s-3) var(--s-4);
 }
 
+/* The little resident, sitting under the call to action. It stays in the flow
+   on purpose: a creature pinned to a corner would land on the stamp on a short
+   phone, and a button that covers another button is a bug, not a decoration. */
+.opening__mascot {
+  margin-top: var(--s-3);
+}
+
+/* The same creature, waving the reader off at the end. */
+.closing__mascot {
+  display: inline-block;
+  margin-top: var(--s-5);
+}
+
 /* Countdown: the digits get the widest measure on the page. */
 .countdown__grid {
   position: relative;
@@ -185,7 +198,7 @@ main > .section:nth-child(even) {
   padding: clamp(1.1rem, 3.4vw, 1.9rem);
   background: var(--soft-white);
   border: var(--edge-warm);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-paper);
 }
 

@@ -9,6 +9,7 @@ import { OPENING, RECIPIENT } from '../content';
 import { el } from '../lib/dom';
 import { enter } from '../lib/motion';
 import { arrow, bow, sprig, star } from '../lib/svg';
+import { buildMascot } from './mascot';
 
 export const OPEN_EVENT = 'hbd:open';
 
@@ -53,6 +54,8 @@ export function buildOpening(): HTMLElement {
     children: [el('span', { className: 'stamp__inner', children: [stampValue, stampLabel] })],
   });
 
+  const mascot = buildMascot({ className: 'opening__mascot' });
+
   const inner = el('div', {
     className: 'opening__inner',
     children: [
@@ -65,6 +68,7 @@ export function buildOpening(): HTMLElement {
       el('div', { className: 'rule-sprig', children: [el('span', { className: 'rule-sprig__line' }), sprig(38), el('span', { className: 'rule-sprig__line' })] }),
       intro,
       actions,
+      mascot.element,
       stamp,
     ],
   });
@@ -76,12 +80,15 @@ export function buildOpening(): HTMLElement {
   });
 
   // A quiet staged entrance — and nothing at all when motion is unwelcome.
+  // The creature arrives last, after the button it sits under: a decoration
+  // that beats the call to action to the eye is in the wrong order.
   const staged: readonly [HTMLElement, number][] = [
     [eyebrow, 0],
     [headline, 120],
     [nameLine, 260],
     [intro, 380],
     [actions, 480],
+    [mascot.element, 620],
   ];
 
   for (const [node, delay] of staged) {

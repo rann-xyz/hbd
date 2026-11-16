@@ -94,6 +94,12 @@
   --radius-xs: 2px;
   --radius-sm: 3px;
   --radius-md: 6px;
+  /* The gemes scale. Paper stays square — a sheet has corners — but every
+     surface you are meant to touch or read as soft goes round: a pill
+     button, a 14px card, a 22px sheet. */
+  --radius-lg: 14px;
+  --radius-xl: 22px;
+  --radius-pill: 999px;
 
   /* ---- Ornament ---- */
   --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.42'/%3E%3C/svg%3E");

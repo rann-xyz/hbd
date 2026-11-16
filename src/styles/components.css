@@ -20,7 +20,9 @@
   background: var(--btn-bg);
   color: var(--btn-ink);
   border: 1px solid var(--cocoa);
-  border-radius: var(--radius-sm);
+  /* A pill. The page is a scrapbook, but a button is a thing you press, and
+     nothing reads as pressable as a shape with no corners. */
+  border-radius: var(--radius-pill);
   /* Ink pressed onto paper: a hard offset shadow, not a soft blur. */
   box-shadow: 2px 2px 0 var(--blush-deep);
   font-size: var(--t-eyebrow);
@@ -52,7 +54,8 @@
 }
 
 .btn:active {
-  transform: translateY(1px);
+  /* A squish, not just a nudge: the button gives under the thumb. */
+  transform: translateY(1px) scale(0.97);
   box-shadow: 1px 1px 0 var(--blush-deep);
 }
 
@@ -103,7 +106,7 @@
      reads as a hole rather than a surface. */
   background-image: var(--sheen);
   border: var(--edge-warm);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-lg);
   padding: clamp(1.1rem, 3.4vw, 2rem);
   box-shadow: var(--shadow-paper);
 }
@@ -427,7 +430,7 @@
   padding: 0.7rem 0.85rem;
   background: var(--soft-white);
   border: var(--edge);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-lg);
   transition: border-color var(--dur-fast) var(--ease-soft), box-shadow var(--dur-fast) var(--ease-soft);
 }
 
@@ -465,7 +468,7 @@ textarea.field__control {
   justify-items: start;
   padding: var(--s-3);
   border: 1px dashed var(--cocoa-hair);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-lg);
   background: var(--cream-warm);
 }
 
@@ -775,7 +778,7 @@ body.is-letter-open .letter {
   background: var(--soft-white);
   background-image: var(--sheen);
   border: var(--edge-warm);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-paper);
   overflow: hidden;
   transition:
@@ -1099,6 +1102,33 @@ body.is-letter-open .letter {
   transform: scale(0.86) translateY(7px);
 }
 
+/* A small permanent bob: a balloon on a string is never quite still. The
+   bigger sway while the party is running lives on the button, so the two
+   animations never fight over the same transform. */
+@media (prefers-reduced-motion: no-preference) {
+  .balloon__art {
+    animation: balloon-bob 4.6s var(--ease-soft) infinite;
+  }
+
+  .balloon:nth-child(2) .balloon__art {
+    animation-delay: 620ms;
+  }
+
+  .balloon:nth-child(3) .balloon__art {
+    animation-delay: 1180ms;
+  }
+}
+
+@keyframes balloon-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-0.8deg);
+  }
+  50% {
+    transform: translateY(-3.5px) rotate(0.9deg);
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .wish[data-celebrating] .balloon:not(.is-popped) {
     animation: balloon-sway 3.6s var(--ease-soft) infinite;
@@ -1216,6 +1246,20 @@ body.is-letter-open .letter {
   animation-delay: calc(var(--i) * 45ms);
 }
 
+/* Every sixth piece is a heart, drawn rather than coloured: the span still
+   carries the fall, the svg is the shape. */
+.cake__confetti-piece--heart {
+  width: 12px;
+  height: 12px;
+  background: none;
+}
+
+.cake__confetti-piece--heart svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 @keyframes confetti-fall {
   0% {
     opacity: 0;
@@ -1278,7 +1322,7 @@ body.is-letter-open .letter {
   background: var(--soft-white);
   background-image: var(--sheen);
   border: var(--edge-warm);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-paper);
 }
 
@@ -1425,5 +1469,162 @@ body.is-letter-open .letter {
   }
   50% {
     transform: rotate(7deg);
+  }
+}
+
+/* ---------- The little resident ---------- */
+/*
+ * A round creature at the foot of the opening page, and the same one waving
+ * goodbye on the last. It is a real button, so it gets a real name and a real
+ * target; the drawing inside is decoration, and the line under it is the only
+ * text it ever says.
+ *
+ * The line and the hint share one grid cell, so the creature says something
+ * *instead of* being labelled rather than on top of itself — and the bubble
+ * sits in the flow, where it can never cover the call to action above it.
+ */
+.mascot {
+  display: grid;
+  grid-template-columns: max-content;
+  justify-items: start;
+  gap: 0.3rem;
+  width: max-content;
+}
+
+.mascot__button {
+  grid-area: 1 / 1;
+  display: grid;
+  place-items: center;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0.15rem;
+  border-radius: var(--radius-lg);
+  transition: transform var(--dur-fast) var(--ease-back);
+}
+
+.mascot__button:hover {
+  transform: translateY(-2px) rotate(-2deg);
+}
+
+.mascot__button:active {
+  transform: scale(0.94);
+}
+
+.mascot__art {
+  display: block;
+  width: clamp(3.25rem, 11vw, 4.5rem);
+  height: auto;
+  filter: drop-shadow(0 6px 10px rgba(81, 58, 64, 0.12));
+}
+
+/* One cell, two occupants: the hint while there is nothing to say, the line
+   afterwards. The hint is hidden by the script on the first boop. */
+.mascot__hint,
+.mascot__say {
+  grid-area: 2 / 1;
+}
+
+.mascot__hint {
+  padding-left: 0.25rem;
+  font-family: var(--font-hand);
+  font-size: var(--t-small);
+  color: var(--rose-text);
+  transform: rotate(-3deg);
+  transform-origin: left center;
+}
+
+.mascot__say {
+  position: relative;
+  margin: 0;
+  max-width: 15rem;
+  padding: 0.4rem 0.8rem;
+  background: var(--soft-white);
+  border: var(--edge);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-tape);
+  color: var(--cocoa);
+  font-size: var(--t-hand);
+  line-height: 1.25;
+}
+
+/* A small tail, pointing up at whoever just said it. */
+.mascot__say::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 15px;
+  width: 8px;
+  height: 8px;
+  background: var(--soft-white);
+  border-top: var(--edge);
+  border-left: var(--edge);
+  transform: rotate(45deg);
+}
+
+/* Before the first boop there is nothing to say, and an empty bubble would
+   still draw its own tail. */
+.mascot__say:empty {
+  display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .mascot__art {
+    animation: mascot-bob 4.4s var(--ease-soft) infinite;
+  }
+
+  /* More specific than the bob above, so it wins while the class is on. */
+  .mascot__button.is-bopped .mascot__art {
+    animation: mascot-boop 620ms var(--ease-back);
+  }
+
+  /* A new line lands with a small pop rather than appearing mid-bubble. The
+     class is applied by the script and taken off again after 520ms, so the
+     animation has to be shorter than that or it would be cut off. */
+  .mascot__say.is-fresh {
+    animation: mascot-say 420ms var(--ease-back);
+  }
+
+  .closing__mascot .mascot__art {
+    animation-delay: 0.7s;
+  }
+}
+
+@keyframes mascot-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(1.4deg);
+  }
+}
+
+@keyframes mascot-boop {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  30% {
+    transform: scale(1.12) rotate(-7deg);
+  }
+  60% {
+    transform: scale(0.96) rotate(5deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes mascot-say {
+  0% {
+    opacity: 0;
+    transform: scale(0.9) rotate(-2deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.03) rotate(1deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
   }
 }

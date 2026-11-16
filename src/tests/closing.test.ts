@@ -59,7 +59,7 @@ describe('closing section', () => {
   it('treats every decoration as decoration', () => {
     const built = mount();
     for (const node of Array.from(
-      built.querySelectorAll('.closing__bloom, .tape, .rule-sprig svg'),
+      built.querySelectorAll('.closing__bloom, .closing__mascot, .tape, .rule-sprig svg'),
     )) {
       expect(node.getAttribute('aria-hidden')).toBe('true');
     }
