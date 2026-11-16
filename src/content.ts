@@ -20,8 +20,9 @@ export const SITE = {
   description: 'A handmade digital birthday scrapbook for Fitria Cahaya Aulia, made by Agis.',
   /** Where the site actually lives — used by the link preview tags in index.html. */
   url: 'https://rann-xyz.github.io/hbd/',
-  /** The social card, relative to the site root. */
-  ogImage: 'assets/og-cover.png',
+  /** The social card, relative to the site root. JPEG, not PNG: same card,
+      seven times lighter, and every preview crawler reads JPEG. */
+  ogImage: 'assets/og-cover.jpg',
   ogImageAlt: 'A handmade birthday card: Fitria — a little world made for you.',
 } as const;
 

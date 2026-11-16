@@ -67,13 +67,48 @@ describe('the social card artwork', () => {
   const cardPath = resolve(process.cwd(), 'public', SITE.ogImage);
   const card = readFileSync(cardPath);
 
-  it('is a real PNG file', () => {
-    expect(card.subarray(0, 8)).toEqual(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  /**
+   * The card is a JPEG, so its size is not at a fixed offset the way a PNG
+   * header is: it lives in the frame header (SOF), behind a chain of segments
+   * whose lengths have to be walked. Progressive JPEGs put a lot of them there.
+   */
+  function jpegFrame(image: Buffer): { width: number; height: number } {
+    let offset = 2; // past the SOI marker
+    while (offset + 3 < image.length) {
+      if (image[offset] !== 0xff) {
+        offset += 1;
+        continue;
+      }
+      const marker = image[offset + 1] ?? 0;
+      // Fill bytes, a bare marker, or a restart/standalone marker: no payload.
+      if (marker === 0xff || marker === 0x01 || (marker >= 0xd0 && marker <= 0xd9)) {
+        offset += 2;
+        continue;
+      }
+      const length = image.readUInt16BE(offset + 2);
+      // SOF0..SOF15, minus the three that are not frame headers.
+      if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
+        return { height: image.readUInt16BE(offset + 5), width: image.readUInt16BE(offset + 7) };
+      }
+      offset += 2 + length;
+    }
+    throw new Error('no frame header in the JPEG');
+  }
+
+  it('is a real JPEG file', () => {
+    expect(card.subarray(0, 3)).toEqual(Buffer.from([0xff, 0xd8, 0xff]));
+    expect(card.subarray(-2)).toEqual(Buffer.from([0xff, 0xd9]));
+  });
+
+  it('is the format the head declares, not just a file with a JPEG name', () => {
+    // A PNG renamed to .jpg is the failure this catches: the bytes and the
+    // declared type have to agree, or a crawler refuses the card.
+    expect(metaContent('property', 'og:image:type')).toBe('image/jpeg');
+    expect(SITE.ogImage.endsWith('.jpg')).toBe(true);
   });
 
   it('is exactly the size the head claims, in the 1.91:1 preview ratio', () => {
-    const width = card.readUInt32BE(16);
-    const height = card.readUInt32BE(20);
+    const { width, height } = jpegFrame(card);
 
     expect(width).toBe(Number(metaContent('property', 'og:image:width')));
     expect(height).toBe(Number(metaContent('property', 'og:image:height')));
@@ -81,7 +116,9 @@ describe('the social card artwork', () => {
     expect(height).toBe(630);
   });
 
-  it('stays well under the size limit the big platforms enforce', () => {
-    expect(card.byteLength).toBeLessThan(5 * 1024 * 1024);
+  it('stays light enough to fetch on a phone before the page opens', () => {
+    // The PNG this replaced was 447 KB for the same 1200x630 card. A card
+    // re-rendered and saved as PNG again would blow this and fail here.
+    expect(card.byteLength).toBeLessThan(150 * 1024);
   });
 });

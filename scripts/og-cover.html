@@ -7,7 +7,7 @@
   ============================================================
   THE SOCIAL CARD, DRAWN FROM THE SITE'S OWN ART.
 
-  This page is the generator for public/assets/og-cover.png. It is not
+  This page is the generator for public/assets/og-cover.jpg. It is not
   part of the site build: it exists so the card can be redrawn whenever
   the artwork moves, instead of being a picture nobody can reproduce.
 
@@ -19,8 +19,15 @@
   To redraw it:
     1. npm run dev
     2. open http://localhost:5173/scripts/og-cover.html at 1200x630
-    3. screenshot the viewport (no scrollbars, no zoom) over
-       public/assets/og-cover.png
+    3. capture the viewport (no scrollbars, no zoom) as a JPEG at quality 88
+       over public/assets/og-cover.jpg. A capture tool that only offers PNG is
+       fine — convert it, which is the only route on a box with no cwebp:
+
+         python3 -c "from PIL import Image; Image.open('card.png').convert('RGB').save('public/assets/og-cover.jpg', quality=88, optimize=True, progressive=True, subsampling=0)"
+
+       JPEG, not PNG: the same 1200x630 card is 61 KB instead of 447 KB, and
+       every preview crawler reads JPEG. src/tests/meta.test.ts holds the byte
+       budget, the declared type and the frame size.
   ============================================================
 -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
