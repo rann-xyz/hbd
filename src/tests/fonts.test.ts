@@ -105,6 +105,54 @@ function fontRules(source: string): Rule[] {
 
 const RULES = fontRules(css);
 
+interface DeclaredFonts {
+  family?: string;
+  weight?: number;
+  italic?: boolean;
+}
+
+/**
+ * What each element declares for itself, resolved once per document.
+ *
+ * The obvious implementation — for every element, walk its ancestors and ask
+ * every rule whether it matches — is O(elements x rules x depth) `matches()`
+ * calls, and on a phone-class host that reached nine seconds for a single
+ * test and started timing the suite out. Asking the engine instead (one
+ * `querySelectorAll` per selector, then a Map lookup per ancestor) gives the
+ * same answer for a fraction of the work.
+ */
+let declaredCache: Map<Element, DeclaredFonts> | null = null;
+
+function declaredFonts(): Map<Element, DeclaredFonts> {
+  if (declaredCache) return declaredCache;
+
+  const declared = new Map<Element, DeclaredFonts>();
+  for (const rule of RULES) {
+    for (const selector of rule.selectors) {
+      let matched: Element[];
+      try {
+        matched = Array.from(document.querySelectorAll(selector));
+      } catch {
+        // A pseudo-element or a selector the engine will not take: it can
+        // never be an element, so it can never carry a face.
+        continue;
+      }
+      for (const node of matched) {
+        // Later rule wins within one element, which is why this iterates the
+        // rules in source order.
+        const own = declared.get(node) ?? {};
+        if (rule.family) own.family = rule.family;
+        if (rule.weight !== undefined) own.weight = rule.weight;
+        if (rule.italic) own.italic = true;
+        declared.set(node, own);
+      }
+    }
+  }
+
+  declaredCache = declared;
+  return declared;
+}
+
 /** The same shell index.html provides, minus the module script. */
 function shell(): void {
   document.body.innerHTML = `
@@ -126,6 +174,8 @@ beforeEach(() => {
   Element.prototype.scrollIntoView = vi.fn();
   Object.defineProperty(document.documentElement, 'scrollHeight', { configurable: true, value: 2000 });
   app = boot();
+  // The document is new, so what it declares is new too.
+  declaredCache = null;
 });
 
 afterEach(() => {
@@ -148,29 +198,12 @@ function facesPainted(): Face[] {
     let italic: boolean | undefined;
 
     for (let cursor: Element | null = node; cursor; cursor = cursor.parentElement) {
-      // Later rule wins within one element; the nearest element that declares
-      // a property wins over anything further up.
-      let ownFamily: string | undefined;
-      let ownWeight: number | undefined;
-      let ownItalic: boolean | undefined;
+      const own = declaredFonts().get(cursor);
+      if (!own) continue;
 
-      for (const rule of RULES) {
-        const matches = rule.selectors.some((selector) => {
-          try {
-            return cursor?.matches(selector) ?? false;
-          } catch {
-            return false;
-          }
-        });
-        if (!matches) continue;
-        if (rule.family) ownFamily = rule.family;
-        if (rule.weight !== undefined) ownWeight = rule.weight;
-        if (rule.italic) ownItalic = true;
-      }
-
-      if (family === undefined && ownFamily) family = ownFamily;
-      if (weight === undefined && ownWeight !== undefined) weight = ownWeight;
-      if (italic === undefined && ownItalic) italic = ownItalic;
+      if (family === undefined && own.family) family = own.family;
+      if (weight === undefined && own.weight !== undefined) weight = own.weight;
+      if (italic === undefined && own.italic) italic = own.italic;
       if (family && weight !== undefined && italic !== undefined) break;
     }
 
