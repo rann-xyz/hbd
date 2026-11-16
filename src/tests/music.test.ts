@@ -353,17 +353,18 @@ describe('a real recording, when the page has one', () => {
     return { play, pause };
   }
 
-  it('is not there yet, so the tune is the one this page makes itself', () => {
-    // The folder is empty in this repo, which is the state the tests below
-    // depend on: drop an mp3 in src/audio and this expectation is the one that
-    // should fail first.
-    expect(tuneRecording()).toBeNull();
+  it('once a recording lands, it is the one the page plays', () => {
+    // The folder now holds a real recording (src/audio/tune.mp3), so the
+    // player must hand the tune to the recording box, not the synthesiser —
+    // and the synthesised box stays available for a page without one.
+    expect(tuneRecording()).not.toBeNull();
 
-    const fake = fakeContext();
-    const player = createTunePlayer({ contextFactory: () => fake.context, storage: fakeStorage() });
+    const media = stubMedia();
+    const player = createTunePlayer({ contextFactory: () => null, storage: fakeStorage() });
     player.play();
 
-    expect(fake.voices.length).toBeGreaterThan(0);
+    expect(media.play).toHaveBeenCalledTimes(1);
+    expect(player.available).toBe(true);
   });
 
   it('plays the recording as it is, and loops it', () => {
