@@ -73,6 +73,10 @@ interface FakeContext {
   resumes: number;
   closed: number;
   advance(seconds: number): void;
+  /** The browser (or the OS) taking the audio away: a locked screen. */
+  suspend(): void;
+  /** ...and giving it back. */
+  resumeNow(): void;
 }
 
 type ResumeMode = 'ok' | 'reject' | 'stay-suspended';
@@ -153,6 +157,12 @@ function fakeContext(resumeMode: ResumeMode = 'ok'): FakeContext {
     advance(seconds: number) {
       state.time += seconds;
     },
+    suspend() {
+      state.playback = 'suspended';
+    },
+    resumeNow() {
+      state.playback = 'running';
+    },
   };
 }
 
@@ -167,6 +177,25 @@ function fakeStorage(initial: Record<string, string> = {}): StorageLike & { map:
 }
 
 /* ---------------- the tune ---------------- */
+
+/**
+ * When a pass beginning at `start` strikes, on the context's clock: the melody
+ * laid down end to end, then the bass notes under the phrase heads. The score
+ * is the only thing that decides this, which is the point — the scheduler's job
+ * is to place these numbers on the timeline and nothing else.
+ */
+function passTimes(start: number): number[] {
+  const times: number[] = [];
+  let cursor = start;
+  for (const note of HAPPY_BIRTHDAY) {
+    times.push(cursor);
+    cursor += note.beats * BEAT_SECONDS;
+  }
+  for (const bass of HAPPY_BIRTHDAY_BASS) {
+    times.push(start + bass.atBeat * BEAT_SECONDS);
+  }
+  return times;
+}
 
 describe('the melody', () => {
   it('is Happy Birthday: four phrases, sung as it is actually sung', () => {
@@ -332,12 +361,142 @@ describe('createMusicBox', () => {
       const fake = fakeContext();
       const box = createMusicBox({ contextFactory: () => fake.context, storage: fakeStorage() });
       box.play();
+      fake.resumeNow();
       const firstPass = fake.started.length;
 
-      // The whole tune is 15.7s; the loop must re-arm before that.
-      vi.advanceTimersByTime(loopSeconds() * 1000);
+      // The whole tune is 15.7s; the loop must re-arm before that. The audio
+      // clock and the wall clock move together here, the way they do in a
+      // browser — the old version of this test only moved the timers, which is
+      // exactly the state the scheduler used to get wrong.
+      for (let step = 0; step < 40; step += 1) {
+        fake.advance(0.5);
+        vi.advanceTimersByTime(500);
+      }
+
       expect(fake.started.length).toBeGreaterThan(firstPass);
-      box.pause();
+      box.destroy();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps every pass on the grid the first one set, however late the timers run', () => {
+    vi.useFakeTimers();
+    try {
+      const fake = fakeContext();
+      const box = createMusicBox({ contextFactory: () => fake.context, storage: fakeStorage() });
+      box.play();
+      fake.resumeNow();
+
+      // Four loops walked at deliberately ragged intervals — a busy main
+      // thread, a tab the browser is throttling — never landing on a beat and
+      // never landing on the horizon either.
+      const ragged = [0.7, 1.4, 0.35, 1.9, 0.9, 1.1, 0.5, 1.6, 0.8, 1.25];
+      let elapsed = 0;
+      let step = 0;
+      while (elapsed < loopSeconds() * 4) {
+        const slice = ragged[step % ragged.length] ?? 1;
+        fake.advance(slice);
+        vi.advanceTimersByTime(slice * 1000);
+        elapsed += slice;
+        step += 1;
+      }
+
+      const times = fake.started;
+      const first = Math.min(...times);
+      const heard = new Set(times.map((at) => at.toFixed(6)));
+      const loops = Math.floor((Math.max(...times) - first) / loopSeconds());
+
+      expect(loops).toBeGreaterThanOrEqual(3);
+      // Every note of every pass sits exactly where the score puts it. A
+      // scheduler that anchored each pass to the clock at the moment its timer
+      // fired would drift here, and the drift is what a listener hears as the
+      // tune stumbling.
+      for (let pass = 0; pass <= loops; pass += 1) {
+        for (const at of passTimes(first + pass * loopSeconds())) {
+          expect(heard.has(at.toFixed(6)), `pass ${pass} is missing a strike at ${at}`).toBe(true);
+        }
+      }
+      box.destroy();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('lays the melody down end to end, so no note waits for the one before it', () => {
+    const fake = fakeContext();
+    const box = createMusicBox({ contextFactory: () => fake.context, storage: fakeStorage() });
+    box.play();
+
+    const heard = new Set(fake.started.map((at) => at.toFixed(6)));
+    let cursor = Math.min(...fake.started);
+    for (const note of HAPPY_BIRTHDAY) {
+      expect(heard.has(cursor.toFixed(6)), `no strike at ${cursor}`).toBe(true);
+      cursor += note.beats * BEAT_SECONDS;
+    }
+    box.destroy();
+  });
+
+  it('schedules nothing while the audio is suspended, so nothing lands in a clump', () => {
+    vi.useFakeTimers();
+    try {
+      const fake = fakeContext();
+      const box = createMusicBox({ contextFactory: () => fake.context, storage: fakeStorage() });
+      box.play();
+      fake.resumeNow();
+
+      // Five seconds of the tune, then the screen locks.
+      for (let step = 0; step < 10; step += 1) {
+        fake.advance(0.5);
+        vi.advanceTimersByTime(500);
+      }
+
+      // Forty seconds of wall clock with the audio clock frozen where it was.
+      // Scheduling against a frozen clock is how every pass used to pile up at
+      // one instant and arrive as a single clump.
+      const before = fake.started.length;
+      fake.suspend();
+      vi.advanceTimersByTime(40_000);
+
+      expect(fake.started).toHaveLength(before);
+
+      // Handed back: the audio clock picks up where it stopped, and the tune
+      // carries on from there — on the grid, not from the top.
+      fake.resumeNow();
+      for (let step = 0; step < 30; step += 1) {
+        fake.advance(0.5);
+        vi.advanceTimersByTime(500);
+      }
+
+      const first = Math.min(...fake.started);
+      const heard = new Set(fake.started.map((at) => at.toFixed(6)));
+      for (const at of passTimes(first + loopSeconds())) {
+        expect(heard.has(at.toFixed(6)), `the loop did not carry on at ${at}`).toBe(true);
+      }
+      box.destroy();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('re-anchors instead of scheduling into the past after a stall', () => {
+    vi.useFakeTimers();
+    try {
+      const fake = fakeContext();
+      const box = createMusicBox({ contextFactory: () => fake.context, storage: fakeStorage() });
+      box.play();
+      fake.resumeNow();
+
+      // Twenty seconds go by with nothing waking the pump: the horizon is long
+      // gone and the next pass is behind the playhead.
+      fake.advance(20);
+      const before = fake.started.length;
+      vi.advanceTimersByTime(1000);
+
+      expect(fake.started.length).toBeGreaterThan(before);
+      for (const at of fake.started.slice(before)) {
+        expect(at).toBeGreaterThan(fake.context.currentTime);
+      }
       box.destroy();
     } finally {
       vi.useRealTimers();

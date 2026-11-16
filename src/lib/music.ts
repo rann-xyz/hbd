@@ -86,6 +86,32 @@ export const HAPPY_BIRTHDAY_BASS: readonly BassNote[] = [
 /** Silence between repeats, in beats. */
 export const LOOP_REST_BEATS = 2;
 
+/**
+ * How often the heartbeat wakes, in milliseconds. It is a poll, not a
+ * deadline: the grid decides when a pass begins, so a late tick costs
+ * nothing but a late tick — and a steady cadence is what lets the box
+ * notice that the audio has been handed back.
+ */
+export const PUMP_INTERVAL_MS = 250;
+
+/** How far ahead of the playhead a pass is laid down, in seconds. */
+export const LOOKAHEAD_SECONDS = 0.4;
+
+/**
+ * How late the heartbeat may be before the grid is abandoned, in seconds. A
+ * background tab clamps its timers to about a second, so a tick can arrive well
+ * after the moment it was asked for; the pass it was meant to place is still
+ * worth placing, a hair late, because the alternative is a loop that shifts
+ * every time the phone looks away. Past this, the tune has genuinely stalled.
+ */
+export const LATE_TOLERANCE_SECONDS = 1.2;
+
+/** The lead the very first pass gets, so its first strike is never in the past. */
+const FIRST_LEAD_SECONDS = 0.12;
+
+/** The lead a pass gets when the grid has to be re-anchored after a stall. */
+const RESTART_LEAD_SECONDS = 0.08;
+
 /** Where each of the four phrases begins, in beats from the top. */
 export const PHRASE_STARTS: readonly number[] = [0, 6, 12, 19];
 
@@ -191,6 +217,10 @@ export function createMusicBox(options: MusicBoxOptions = {}): MusicBox {
   let playing = false;
   let timer: ReturnType<typeof setTimeout> | null = null;
   let destroyed = false;
+  /** Where the current grid's first pass begins, on the audio clock. */
+  let gridStart = 0;
+  /** Which pass of that grid is next to be laid down. */
+  let passIndex = 0;
   const sounding = new Set<OscillatorNode>();
 
   function persist(playingNow: boolean): void {
@@ -301,16 +331,60 @@ export function createMusicBox(options: MusicBoxOptions = {}): MusicBox {
     for (const bass of HAPPY_BIRTHDAY_BASS) {
       strike(bass.midi, startAt + bass.atBeat * BEAT_SECONDS, 2 * BEAT_SECONDS, 0.16);
     }
+  }
 
+  function armPump(): void {
     if (timer !== null) clearTimeout(timer);
-    const untilNext = (cursor + LOOP_REST_BEATS * BEAT_SECONDS - context.currentTime - 0.4) * 1000;
-    timer = setTimeout(
-      () => {
-        if (!playing || !context) return;
-        schedulePass(context.currentTime + 0.08);
-      },
-      Math.max(250, untilNext),
-    );
+    timer = setTimeout(pump, PUMP_INTERVAL_MS);
+  }
+
+  /**
+   * The heartbeat. Every pass begins where the grid says it does — the first
+   * pass's start plus a whole number of loops — and never where the clock
+   * happened to be when a timer fired. That is the whole difference between a
+   * tune that loops and a tune that stumbles a little further behind itself
+   * with every repeat.
+   *
+   * Two states it refuses to schedule in. A suspended context has a frozen
+   * clock, so laying passes down against it piles them all at the same instant
+   * and hands them back as one clump; it waits instead, and picks the grid up
+   * when the audio returns. And a grid that has fallen behind the playhead — a
+   * throttled tab, a screen that stayed locked for a minute — is re-anchored
+   * rather than scheduled into the past.
+   *
+   * It does not try to resume the context itself: a resume from a timer is not
+   * a gesture, and a box that keeps asking would fight the browser that took
+   * the audio away on purpose.
+   */
+  function pump(): void {
+    timer = null;
+    if (destroyed || !playing || !context) return;
+
+    if (context.state !== 'running') {
+      armPump();
+      return;
+    }
+
+    const now = context.currentTime;
+    let next = gridStart + passIndex * loopSeconds();
+
+    // Only a pass the playhead has left properly behind is re-anchored: one
+    // that is merely a tick late is still on the grid, and moving it would be
+    // the drift this whole function exists to prevent.
+    if (now - next > LATE_TOLERANCE_SECONDS) {
+      gridStart = now + RESTART_LEAD_SECONDS;
+      passIndex = 0;
+      next = gridStart;
+    }
+
+    if (next - now > LOOKAHEAD_SECONDS) {
+      armPump();
+      return;
+    }
+
+    schedulePass(next);
+    passIndex += 1;
+    armPump();
   }
 
   function play(): void {
@@ -322,13 +396,17 @@ export function createMusicBox(options: MusicBoxOptions = {}): MusicBox {
 
     // Everything is scheduled against currentTime, which does not advance
     // while the context is suspended — so scheduling first is safe, and the
-    // tune begins the moment the browser lets it.
+    // tune begins the moment the browser lets it. The grid is set here once,
+    // and every later pass is placed relative to it.
     const now = target.currentTime;
     master.gain.cancelScheduledValues(now);
     master.gain.setValueAtTime(Math.max(0.0001, master.gain.value), now);
     master.gain.linearRampToValueAtTime(0.9, now + 1.1);
 
-    schedulePass(now + 0.12);
+    gridStart = now + FIRST_LEAD_SECONDS;
+    passIndex = 1;
+    schedulePass(gridStart);
+    armPump();
     persist(true);
     options.onStateChange?.(true);
 
