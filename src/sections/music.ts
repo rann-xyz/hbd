@@ -4,7 +4,7 @@
 
    It stays out of the way until the surprise is opened, and it never
    lies about what it is doing: the pressed state, the label and the
-   little animation all come from the same reading of the music box.
+   little animation all come from the same reading of the player.
    ============================================================ */
 
 import { MUSIC } from '../content';

@@ -6,11 +6,14 @@ import {
   HAPPY_BIRTHDAY_BASS,
   LOOP_REST_BEATS,
   MUSIC_PREFERENCE_KEY,
+  PIANO_KNOCK,
+  PIANO_PARTIALS,
   PHRASE_STARTS,
   createMusicBox,
   isAudioSupported,
   loopSeconds,
   midiToFrequency,
+  partialFrequency,
   silentMusicBox,
   totalBeats,
 } from '../lib/music';
@@ -26,6 +29,8 @@ afterEach(() => {
 
 interface FakeParam {
   value: number;
+  /** Every ramp asked of it, in order — the shape of the envelope. */
+  calls: { method: string; value: number; time: number }[];
   setValueAtTime(v: number, t: number): FakeParam;
   linearRampToValueAtTime(v: number, t: number): FakeParam;
   exponentialRampToValueAtTime(v: number, t: number): FakeParam;
@@ -35,16 +40,20 @@ interface FakeParam {
 function fakeParam(value = 0): FakeParam {
   const param: FakeParam = {
     value,
-    setValueAtTime: (v) => {
+    calls: [],
+    setValueAtTime: (v, t) => {
       param.value = v;
+      param.calls.push({ method: 'set', value: v, time: t });
       return param;
     },
-    linearRampToValueAtTime: (v) => {
+    linearRampToValueAtTime: (v, t) => {
       param.value = v;
+      param.calls.push({ method: 'linear', value: v, time: t });
       return param;
     },
-    exponentialRampToValueAtTime: (v) => {
+    exponentialRampToValueAtTime: (v, t) => {
       param.value = v;
+      param.calls.push({ method: 'exp', value: v, time: t });
       return param;
     },
     cancelScheduledValues: () => param,
@@ -63,6 +72,8 @@ function fakeNode(): { connect: (n: unknown) => unknown; disconnect: () => void 
 interface FakeVoice {
   starts: number[];
   stops: number[];
+  /** The last frequency it was tuned to. */
+  frequency: FakeParam;
 }
 
 interface FakeContext {
@@ -70,6 +81,8 @@ interface FakeContext {
   started: number[];
   stopped: number[];
   voices: FakeVoice[];
+  /** Every gain node the graph built, in creation order. */
+  gains: FakeParam[];
   resumes: number;
   closed: number;
   advance(seconds: number): void;
@@ -85,6 +98,7 @@ function fakeContext(resumeMode: ResumeMode = 'ok'): FakeContext {
   const started: number[] = [];
   const stopped: number[] = [];
   const voices: FakeVoice[] = [];
+  const gains: FakeParam[] = [];
   const state = { time: 0, resumes: 0, closed: 0, playback: 'suspended' };
 
   const context = {
@@ -107,7 +121,9 @@ function fakeContext(resumeMode: ResumeMode = 'ok'): FakeContext {
       return Promise.resolve();
     },
     createGain() {
-      return { ...fakeNode(), gain: fakeParam(1) };
+      const gain = fakeParam(1);
+      gains.push(gain);
+      return { ...fakeNode(), gain };
     },
     createBiquadFilter() {
       return { ...fakeNode(), type: 'lowpass', frequency: fakeParam(350) };
@@ -124,12 +140,12 @@ function fakeContext(resumeMode: ResumeMode = 'ok'): FakeContext {
       };
     },
     createOscillator() {
-      const voice: FakeVoice = { starts: [], stops: [] };
+      const voice: FakeVoice = { starts: [], stops: [], frequency: fakeParam(440) };
       voices.push(voice);
       return {
         ...fakeNode(),
         type: 'sine',
-        frequency: fakeParam(440),
+        frequency: voice.frequency,
         onended: null as null | (() => void),
         start(when: number) {
           voice.starts.push(when);
@@ -148,6 +164,7 @@ function fakeContext(resumeMode: ResumeMode = 'ok'): FakeContext {
     started,
     stopped,
     voices,
+    gains,
     get resumes() {
       return state.resumes;
     },
@@ -231,6 +248,98 @@ describe('the melody', () => {
   });
 });
 
+describe('the piano', () => {
+  /**
+   * The envelope of the nth note struck in a pass — the melody first, then the
+   * bass under it. Three gains go up before any note does: the master, the dry
+   * path and the wet one.
+   */
+  function envelopeOf(fake: FakeContext, note: number): FakeParam {
+    return fake.gains[3 + note * PIANO_PARTIALS.length] as FakeParam;
+  }
+
+  /** Every envelope of one note, one per partial. */
+  function partialsOf(fake: FakeContext, note: number): FakeParam[] {
+    const first = 3 + note * PIANO_PARTIALS.length;
+    return fake.gains.slice(first, first + PIANO_PARTIALS.length);
+  }
+
+  function playing(): FakeContext {
+    const fake = fakeContext();
+    const box = createMusicBox({ contextFactory: () => fake.context, storage: fakeStorage() });
+    box.play();
+    return fake;
+  }
+
+  it('is a struck string: a hammer, a fast attack, then a two-stage decay', () => {
+    const fake = playing();
+    const [start, peak, knock, gone] = envelopeOf(fake, 0).calls;
+
+    // Silence, the hammer, the drop, and then the long ring out.
+    expect([start?.method, peak?.method, knock?.method, gone?.method]).toEqual([
+      'set',
+      'exp',
+      'exp',
+      'exp',
+    ]);
+    expect(start?.value).toBeCloseTo(0.0001, 6);
+    expect(gone?.value).toBeCloseTo(0.0001, 6);
+
+    // The attack is a hammer, not a fade-in, and the drop after it is quick.
+    expect((peak?.time ?? 0) - (start?.time ?? 0)).toBeLessThan(0.02);
+    expect((knock?.time ?? 0) - (peak?.time ?? 0)).toBeLessThan(0.2);
+    expect(knock?.value).toBeCloseTo((peak?.value ?? 0) * PIANO_KNOCK, 4);
+    // ...and the tail is long: a piano does not stop when the key comes up.
+    expect((gone?.time ?? 0) - (knock?.time ?? 0)).toBeGreaterThan(0.5);
+  });
+
+  it('sounds the partials above the fundamental, and lets them die first', () => {
+    const fake = playing();
+    const tails = partialsOf(fake, 0).map((envelope) => envelope.calls.at(-1)?.time ?? 0);
+
+    expect(tails).toHaveLength(PIANO_PARTIALS.length);
+    for (let n = 1; n < tails.length; n += 1) {
+      expect(tails[n], `partial ${n} outlasts partial ${n - 1}`).toBeLessThan(tails[n - 1] ?? 0);
+    }
+    // The top one is the hammer: gone in a fraction of the fundamental's ring.
+    expect(tails.at(-1) ?? 0).toBeLessThan((tails[0] ?? 0) * 0.5);
+  });
+
+  it('tunes the partials sharp of the exact multiples, more so the higher they are', () => {
+    const exact = midiToFrequency(60);
+    const sharpness = (ratio: number): number => partialFrequency(60, ratio) / (exact * ratio) - 1;
+
+    expect(partialFrequency(60, 1)).toBeCloseTo(exact, 6);
+    expect(sharpness(2)).toBeGreaterThan(0);
+    expect(sharpness(9)).toBeGreaterThan(sharpness(2));
+    // A stretch, not a detune: the ninth partial is sharp by cents, not semitones.
+    expect(sharpness(9)).toBeLessThan(0.02);
+  });
+
+  it('tunes each note as a pair of strings, a hair apart', () => {
+    const fake = playing();
+    const midi = HAPPY_BIRTHDAY[0]?.midi ?? 0;
+    const [one, two] = PIANO_PARTIALS;
+
+    expect(fake.voices[0]?.frequency.value).toBeCloseTo(
+      partialFrequency(midi, one?.ratio ?? 1) * 1.0002,
+      4,
+    );
+    expect(fake.voices[1]?.frequency.value).toBeCloseTo(
+      partialFrequency(midi, two?.ratio ?? 2) * 0.9998,
+      4,
+    );
+  });
+
+  it('lets the bass ring on longer than the melody', () => {
+    const fake = playing();
+    const melodyTail = envelopeOf(fake, 0).calls.at(-1)?.time ?? 0;
+    const bassTail = envelopeOf(fake, HAPPY_BIRTHDAY.length).calls.at(-1)?.time ?? 0;
+
+    expect(bassTail).toBeGreaterThan(melodyTail);
+  });
+});
+
 /* ---------------- the box ---------------- */
 
 describe('createMusicBox', () => {
@@ -256,8 +365,10 @@ describe('createMusicBox', () => {
 
     box.play();
     expect(box.isPlaying()).toBe(true);
-    // Two oscillators per voice: the fundamental and its octave partial.
-    expect(fake.voices).toHaveLength((HAPPY_BIRTHDAY.length + HAPPY_BIRTHDAY_BASS.length) * 2);
+    // One oscillator per partial, for every note of the tune and the bass.
+    expect(fake.voices).toHaveLength(
+      (HAPPY_BIRTHDAY.length + HAPPY_BIRTHDAY_BASS.length) * PIANO_PARTIALS.length,
+    );
     // Nothing is scheduled in the past.
     for (const at of fake.started) expect(at).toBeGreaterThan(0);
   });

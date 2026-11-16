@@ -1,14 +1,17 @@
 /* ============================================================
-   MUSIC — "Happy Birthday to You", played on a music box.
+   MUSIC — "Happy Birthday to You", played on a piano.
 
    The tune is synthesised in the browser rather than shipped as an
    audio file: no asset to download on a phone connection, nothing to
    license (the melody has been public domain since 2016), and the
    timbre can be tuned to the page instead of the other way round.
 
-   A music box is a struck tine, so every voice is a near-instant
-   attack followed by a long exponential tail, plus the octave partial
-   that makes it read as metal rather than as a sine-wave beep.
+   A piano is a struck string. Every voice is a hammer, then a fast
+   attack into a two-stage decay — a quick drop as the hammer's energy
+   leaves the string, and a long tail after it. The partials above the
+   fundamental die faster than it does and sit a little sharp of the
+   exact multiples, the way a real string's do; that stretch is what
+   makes it read as a piano rather than as a stack of sine waves.
    ============================================================ */
 
 import { resolveStorage, type StorageLike } from './storage';
@@ -17,13 +20,53 @@ export const MUSIC_PREFERENCE_KEY = 'hbd-fitria.music.v1';
 
 /**
  * Fired by a section that wants the tune — the cake asks for it when the
- * reader presses "sing it with me". The shell owns the music box, so the
+ * reader presses "sing it with me". The shell owns the player, so the
  * section asks rather than reaching for it.
  */
 export const TUNE_REQUEST_EVENT = 'hbd:tune-request';
 
-/** Seconds per beat. A music box is unhurried; this is roughly 103 bpm. */
+/** Seconds per beat. A piano is unhurried; this is roughly 103 bpm. */
 export const BEAT_SECONDS = 0.58;
+
+/**
+ * The partial series of a struck string: how loud each one is against the
+ * fundamental, and how much of the fundamental's ring it gets. The top one is
+ * the hammer — a bright knock that is gone almost at once, which is what the
+ * first few milliseconds of a piano note actually are.
+ */
+export const PIANO_PARTIALS: readonly { ratio: number; level: number; ring: number }[] = [
+  { ratio: 1, level: 1, ring: 1 },
+  { ratio: 2, level: 0.42, ring: 0.72 },
+  { ratio: 3, level: 0.2, ring: 0.55 },
+  { ratio: 4, level: 0.11, ring: 0.44 },
+  { ratio: 6, level: 0.05, ring: 0.3 },
+  { ratio: 9, level: 0.03, ring: 0.14 },
+];
+
+/** How sharp the partials sit of the exact multiples: a string is stiff. */
+export const PIANO_STRETCH = 0.0004;
+
+/** Seconds from the hammer landing to the loudest moment of the note. */
+export const PIANO_ATTACK_SECONDS = 0.004;
+
+/** How far the note drops in its first moments, and how long that takes. */
+export const PIANO_KNOCK = 0.32;
+export const PIANO_KNOCK_SECONDS = 0.12;
+
+/** The shortest tail a partial may have, so the ramps never cross over. */
+const PIANO_MIN_TAIL = 0.2;
+
+/**
+ * How hard the melody and the bass are struck. Six partials sum to about 1.8
+ * times the fundamental's own level, and notes overlap, so these are well
+ * under the old single-partial figure: the tune is loud enough without the
+ * master gain having to clip it.
+ */
+const MELODY_LEVEL = 0.22;
+const BASS_LEVEL = 0.1;
+
+/** The low strings ring on well after the melody's have gone. */
+const BASS_RING = 1.7;
 
 export interface MelodyNote {
   /** MIDI note number — 60 is middle C. */
@@ -127,6 +170,19 @@ export function loopSeconds(): number {
 /** Equal temperament, A4 = 440 Hz. */
 export function midiToFrequency(midi: number): number {
   return 440 * Math.pow(2, (midi - 69) / 12);
+}
+
+/**
+ * Where one partial of a note actually sits. A stiff string does not divide
+ * into exact halves and thirds: every partial above the first comes out a
+ * little sharp, and the higher it is the further sharp it goes. The
+ * fundamental is the pitch and stays exactly where the note is — it is the
+ * partials above it that are stretched, which is the whole of the difference
+ * between a piano and a stack of sine waves.
+ */
+export function partialFrequency(midi: number, ratio: number): number {
+  const stretch = Math.sqrt((1 + PIANO_STRETCH * ratio * ratio) / (1 + PIANO_STRETCH));
+  return midiToFrequency(midi) * ratio * stretch;
 }
 
 /* ------------------------------------------------------------------ */
@@ -248,10 +304,12 @@ export function createMusicBox(options: MusicBoxOptions = {}): MusicBox {
     master = context.createGain();
     master.gain.value = 0;
 
-    // Roll the very top off: a real music box has no brittle high end.
+    // Roll the very top off, but leave the brightness a piano needs: the
+    // hammer lives up there, and cutting it away is what makes a synthesiser
+    // sound like a synthesiser.
     const tone = context.createBiquadFilter();
     tone.type = 'lowpass';
-    tone.frequency.value = 5200;
+    tone.frequency.value = 7000;
 
     const dry = context.createGain();
     dry.gain.value = 0.85;
@@ -272,51 +330,54 @@ export function createMusicBox(options: MusicBoxOptions = {}): MusicBox {
     return true;
   }
 
-  /** One struck tine. */
-  function strike(midi: number, at: number, seconds: number, level: number): void {
+  /** One struck string: a hammer, a fast attack, and a two-stage decay. */
+  function strike(midi: number, at: number, seconds: number, level: number, ring = 1): void {
     if (!context || !master) return;
 
-    const frequency = midiToFrequency(midi);
-    const envelope = context.createGain();
-    envelope.connect(master);
+    const voices: OscillatorNode[] = [];
+    const envelopes: GainNode[] = [];
 
-    const tail = Math.max(0.9, seconds * 1.7);
-    envelope.gain.setValueAtTime(0.0001, at);
-    envelope.gain.exponentialRampToValueAtTime(level, at + 0.006);
-    envelope.gain.exponentialRampToValueAtTime(0.0001, at + tail);
+    for (const [index, partial] of PIANO_PARTIALS.entries()) {
+      const envelope = context.createGain();
+      envelope.connect(master);
 
-    const fundamental = context.createOscillator();
-    fundamental.type = 'sine';
-    fundamental.frequency.setValueAtTime(frequency, at);
-    fundamental.connect(envelope);
+      const peak = level * partial.level;
+      // The low strings ring on after the high ones have gone, which is why
+      // the bass gets a longer `ring` than the melody.
+      const tail = Math.max(PIANO_MIN_TAIL, (0.9 + seconds * 1.6) * ring * partial.ring);
 
-    // The octave partial decays faster than the fundamental, the way metal does.
-    const shimmer = context.createGain();
-    shimmer.gain.setValueAtTime(0.18, at);
-    shimmer.gain.exponentialRampToValueAtTime(0.0001, at + tail * 0.55);
+      envelope.gain.setValueAtTime(0.0001, at);
+      envelope.gain.exponentialRampToValueAtTime(peak, at + PIANO_ATTACK_SECONDS);
+      envelope.gain.exponentialRampToValueAtTime(peak * PIANO_KNOCK, at + PIANO_KNOCK_SECONDS);
+      envelope.gain.exponentialRampToValueAtTime(0.0001, at + tail);
 
-    const partial = context.createOscillator();
-    partial.type = 'sine';
-    partial.frequency.setValueAtTime(frequency * 2, at);
-    partial.connect(shimmer);
-    shimmer.connect(envelope);
+      const oscillator = context.createOscillator();
+      oscillator.type = 'sine';
+      // The pair of strings a note is tuned with are never exactly together;
+      // the slow beat between them is what stops it sounding like a synth.
+      const together = index % 2 === 0 ? 1.0002 : 0.9998;
+      oscillator.frequency.setValueAtTime(partialFrequency(midi, partial.ratio) * together, at);
+      oscillator.connect(envelope);
 
-    sounding.add(fundamental);
-    sounding.add(partial);
+      oscillator.start(at);
+      oscillator.stop(at + tail + 0.05);
 
-    fundamental.onended = (): void => {
-      sounding.delete(fundamental);
-      sounding.delete(partial);
-      fundamental.disconnect();
-      partial.disconnect();
-      shimmer.disconnect();
-      envelope.disconnect();
+      voices.push(oscillator);
+      envelopes.push(envelope);
+      sounding.add(oscillator);
+    }
+
+    const first = voices[0];
+    if (!first) return;
+
+    // One teardown for the whole note, hung off the fundamental.
+    first.onended = (): void => {
+      for (const voice of voices) {
+        sounding.delete(voice);
+        voice.disconnect();
+      }
+      for (const envelope of envelopes) envelope.disconnect();
     };
-
-    fundamental.start(at);
-    fundamental.stop(at + tail + 0.05);
-    partial.start(at);
-    partial.stop(at + tail * 0.55 + 0.05);
   }
 
   function schedulePass(startAt: number): void {
@@ -324,12 +385,12 @@ export function createMusicBox(options: MusicBoxOptions = {}): MusicBox {
 
     let cursor = startAt;
     for (const note of HAPPY_BIRTHDAY) {
-      strike(note.midi, cursor, note.beats * BEAT_SECONDS, 0.42);
+      strike(note.midi, cursor, note.beats * BEAT_SECONDS, MELODY_LEVEL);
       cursor += note.beats * BEAT_SECONDS;
     }
 
     for (const bass of HAPPY_BIRTHDAY_BASS) {
-      strike(bass.midi, startAt + bass.atBeat * BEAT_SECONDS, 2 * BEAT_SECONDS, 0.16);
+      strike(bass.midi, startAt + bass.atBeat * BEAT_SECONDS, 2 * BEAT_SECONDS, BASS_LEVEL, BASS_RING);
     }
   }
 

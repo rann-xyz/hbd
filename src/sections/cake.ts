@@ -267,7 +267,7 @@ export function buildCake(): CakeHandle {
   };
 
   const askForTune = (): void => {
-    // The shell owns the music box; the section only asks for it.
+    // The shell owns the player; the section only asks for it.
     section.dispatchEvent(new CustomEvent(TUNE_REQUEST_EVENT, { bubbles: true }));
   };
 
