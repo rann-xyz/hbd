@@ -298,7 +298,12 @@ export function boot(
     });
 
   if (music.available && typeof document !== 'undefined' && document.body) {
-    musicControl = buildMusicControl(music);
+    musicControl = buildMusicControl(music, {
+      // The creature at the foot of the opening page keeps time with the tune,
+      // so the page has to know when there is one — including when the reader
+      // silences it from the control, which the shell never sees otherwise.
+      onChange: (playing) => toggleClass(document.body, 'is-playing', playing),
+    });
     document.body.append(musicControl.element);
     teardown.push(() => musicControl?.destroy());
   }

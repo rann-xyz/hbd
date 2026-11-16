@@ -1,9 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MASCOT } from '../content';
+import { BEAT_SECONDS } from '../lib/music';
+import { markCakeCut, markOpened, partyState, resetParty } from '../lib/party';
 import { balloon, cake, face, heart, mascot } from '../lib/svg';
 import { buildCake, CONFETTI_COUNT, type CakeHandle } from '../sections/cake';
 import { buildClosing } from '../sections/closing';
@@ -55,6 +57,35 @@ function motionGuard(needle: string): string {
 function startOf(path: Element): { x: number; y: number } {
   const match = (path.getAttribute('d') ?? '').match(/^M([\d.-]+)\s+([\d.-]+)/);
   return { x: Number(match?.[1]), y: Number(match?.[2]) };
+}
+
+/**
+ * The declaration block for a rule that lives inside a guard, where it is
+ * indented and so not at the start of its line.
+ */
+function nestedBlock(selector: string): string {
+  const pattern = selector
+    .split(/\s+/)
+    .map((part) => part.replace(/[-[\]{}()*+?.,\\^$|#]/g, '\\$&'))
+    .join('\\s+');
+  const match = css.match(new RegExp(`${pattern}\\s*\\{([^}]*)\\}`));
+  expect(match, `no rule found for ${selector}`).not.toBeNull();
+  return match?.[1] ?? '';
+}
+
+/**
+ * Every frame of the blink, with the moment it happens and how squashed the
+ * eye is there — the shape of the animation, read out of the stylesheet.
+ */
+function blinkFrames(): { at: number; scale: number }[] {
+  const body = css.match(/@keyframes face-blink\s*\{([\s\S]*?)\n\}/)?.[1] ?? '';
+  const frames: { at: number; scale: number }[] = [];
+  for (const step of body.split('}')) {
+    const scale = Number(step.match(/scaleY\(([\d.]+)\)/)?.[1]);
+    if (!Number.isFinite(scale)) continue;
+    for (const at of step.matchAll(/([\d.]+)%/g)) frames.push({ at: Number(at[1]), scale });
+  }
+  return frames;
 }
 
 function stubMatchMedia(matches: boolean): void {
@@ -192,6 +223,12 @@ describe('the little resident', () => {
     return built;
   }
 
+  beforeEach(() => {
+    // The party log is module state, so every test starts at the top of the
+    // page with nothing opened and no cake cut.
+    resetParty();
+  });
+
   afterEach(() => {
     resident?.destroy();
     resident = null;
@@ -277,6 +314,105 @@ describe('the little resident', () => {
 
     built.element.querySelector('button')?.click();
     expect(built.boops()).toBe(0);
+  });
+
+  it('waits, then talks about the party, then about the cake', () => {
+    const built = mount();
+    const button = built.element.querySelector('button');
+
+    button?.click();
+    expect(built.current()).toBe(MASCOT.lines[0]);
+
+    // The door opens: the next boop is a different conversation.
+    markOpened();
+    button?.click();
+    expect(built.current()).toBe(MASCOT.party[0]);
+
+    markCakeCut();
+    button?.click();
+    expect(built.current()).toBe(MASCOT.afterCake[0]);
+  });
+
+  it('starts a new set at its own first line, not mid-way through the old one', () => {
+    const built = mount();
+    const button = built.element.querySelector('button');
+
+    // Three boops into the waiting set — the creature is not at its start.
+    for (const line of MASCOT.lines.slice(0, 3)) {
+      button?.click();
+      expect(built.current()).toBe(line);
+    }
+
+    markOpened();
+    button?.click();
+    expect(built.current()).toBe(MASCOT.party[0]);
+  });
+
+  it('gives up on being booped, and keeps saying so', () => {
+    stubMatchMedia(false);
+    const built = mount();
+    const button = built.element.querySelector('button');
+
+    for (let n = 0; n < MASCOT.boopsBeforeTooMuch; n += 1) button?.click();
+    expect(built.boops()).toBe(MASCOT.boopsBeforeTooMuch);
+    expect(built.current()).not.toBe(MASCOT.tooMuch);
+
+    button?.click();
+    expect(built.current()).toBe(MASCOT.tooMuch);
+    button?.click();
+    expect(built.current()).toBe(MASCOT.tooMuch);
+
+    // The shiver is the joke, and it goes on the wrapper rather than on the
+    // drawing, which is already busy bobbing.
+    expect(built.element.classList.contains('is-ticklish')).toBe(true);
+    expect(nestedBlock('.mascot.is-ticklish')).toMatch(/animation:\s*mascot-ticklish/);
+  });
+
+  it('blinks on its own clock, and holds still for a reader who asked it to', () => {
+    for (const selector of ['.mascot__art .face__eye', '.cake__art .face__eye']) {
+      // Inside the guard, so reduced motion gets two drawings that hold still.
+      expect(motionGuard(selector), selector).toMatch(/animation:\s*face-blink/);
+      // A squash needs the eye's own box to squash inside.
+      expect(nestedBlock(selector), selector).toMatch(/transform-box:\s*fill-box/);
+      expect(nestedBlock(selector), selector).toMatch(/transform-origin:\s*center/);
+    }
+
+    // The eye is open for almost the whole cycle: a face that keeps its eyes
+    // shut is asleep, not blinking.
+    const shut = blinkFrames().filter((frame) => frame.scale < 0.5);
+    expect(shut.length).toBeGreaterThan(0);
+    expect(Math.min(...shut.map((frame) => frame.at))).toBeGreaterThan(85);
+    expect(blinkFrames().some((frame) => frame.scale === 1)).toBe(true);
+  });
+
+  it('keeps time with the tune while it plays', () => {
+    expect(motionGuard('body.is-playing .mascot__art')).toMatch(/animation:\s*mascot-dance/);
+
+    // One cycle per two beats of the song, not a number someone liked.
+    const duration = Number(css.match(/animation:\s*mascot-dance\s+([\d.]+)s/)?.[1]);
+    expect(duration).toBeCloseTo(BEAT_SECONDS * 2, 2);
+
+    // A poke has to interrupt the dance: both rules sit in the same block, so
+    // more classes is the whole of the difference between them.
+    const classes = (selector: string): number => (selector.match(/\.[\w-]+/g) ?? []).length;
+    expect(classes('.mascot__button.is-bopped .mascot__art')).toBeGreaterThan(
+      classes('body.is-playing .mascot__art'),
+    );
+  });
+
+  it('is told about the party by the sections that hold it', () => {
+    // The wiring, not the lines: a set of lines nobody ever selects is a set
+    // of lines nobody ever reads.
+    const opening = buildOpening();
+    expect(partyState().opened).toBe(false);
+    opening.querySelector<HTMLButtonElement>('[data-open-surprise]')?.click();
+    expect(partyState().opened).toBe(true);
+
+    const cakeHandle = buildCake();
+    expect(partyState().cakeCut).toBe(false);
+    cakeHandle.cut();
+    expect(partyState().cakeCut).toBe(true);
+    cakeHandle.destroy();
   });
 
   it('sits on the opening page, under the call to action', () => {

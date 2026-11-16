@@ -8,6 +8,7 @@
 import { OPENING, RECIPIENT } from '../content';
 import { el } from '../lib/dom';
 import { enter } from '../lib/motion';
+import { markOpened } from '../lib/party';
 import { arrow, bow, sprig, star } from '../lib/svg';
 import { buildMascot } from './mascot';
 
@@ -103,6 +104,9 @@ export function buildOpening(): HTMLElement {
   }
 
   cta.addEventListener('click', () => {
+    // The party log, so the little resident below knows the door has been
+    // opened — it has a different set of things to say from here on.
+    markOpened();
     section.dispatchEvent(new CustomEvent(OPEN_EVENT, { bubbles: true }));
   });
 

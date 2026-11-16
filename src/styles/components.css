@@ -1587,6 +1587,37 @@ body.is-letter-open .letter {
   .closing__mascot .mascot__art {
     animation-delay: 0.7s;
   }
+
+  /* The creature blinks, on its own slow clock: open for almost the whole
+     cycle with one flick at the end. An eye that stays shut for long is a
+     wink, not a blink, so the squash is brief. */
+  .mascot__art .face__eye {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: face-blink 6.2s ease-in-out infinite;
+  }
+
+  /* The cake blinks too — it is the one other thing on this page that looks
+     back at you — but on a slower clock of its own: two faces blinking in
+     unison read as one animation rather than as two creatures. */
+  .cake__art .face__eye {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: face-blink 7.6s ease-in-out infinite;
+  }
+
+  /* While the tune plays it keeps time with it — one cycle per two beats of
+     the song. More specific than the bob above, so it wins while the class is
+     on; the boop below is more specific still, so a poke interrupts the dance. */
+  body.is-playing .mascot__art {
+    animation: mascot-dance 1.16s var(--ease-soft) infinite;
+  }
+
+  /* Booped once too often: the whole creature shivers, bubble and all. On the
+     wrapper, so it does not fight whatever the drawing is doing. */
+  .mascot.is-ticklish {
+    animation: mascot-ticklish 620ms var(--ease-back);
+  }
 }
 
 @keyframes mascot-bob {
@@ -1626,5 +1657,56 @@ body.is-letter-open .letter {
   100% {
     opacity: 1;
     transform: scale(1) rotate(0deg);
+  }
+}
+
+/* Open, open, open, shut, open: the eye is a dot, so closing it is a squash
+   rather than a new shape. */
+@keyframes face-blink {
+  0%,
+  90%,
+  100% {
+    transform: scaleY(1);
+  }
+  93%,
+  95% {
+    transform: scaleY(0.12);
+  }
+}
+
+/* Two beats of the song: down on the first, up on the second, with a lean
+   each way so it reads as dancing rather than as bouncing. */
+@keyframes mascot-dance {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2.5deg);
+  }
+  25% {
+    transform: translateY(-5px) rotate(1.5deg);
+  }
+  50% {
+    transform: translateY(0) rotate(2.5deg);
+  }
+  75% {
+    transform: translateY(-5px) rotate(-1.5deg);
+  }
+}
+
+@keyframes mascot-ticklish {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  20% {
+    transform: translateX(-3px) rotate(-1.5deg);
+  }
+  40% {
+    transform: translateX(3px) rotate(1.5deg);
+  }
+  60% {
+    transform: translateX(-2px) rotate(-1deg);
+  }
+  80% {
+    transform: translateX(2px) rotate(1deg);
   }
 }

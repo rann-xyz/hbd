@@ -164,7 +164,10 @@ describe('the tune that starts on its own', () => {
       pause: vi.fn(() => {
         playing = false;
       }),
-      toggle: () => playing,
+      toggle: () => {
+        playing = !playing;
+        return playing;
+      },
       destroy: vi.fn(),
     };
     return { box, play, isPlaying: () => playing, unlock: () => { open = true; } };
@@ -183,6 +186,19 @@ describe('the tune that starts on its own', () => {
     app = boot(undefined, { musicBox: gate.box });
 
     expect(document.querySelector('[data-music]')?.hasAttribute('hidden')).toBe(false);
+  });
+
+  it('tells the page when there is music, so the creature can dance to it', () => {
+    const gate = gatedBox(true);
+    app = boot(undefined, { musicBox: gate.box });
+
+    expect(document.body.classList.contains('is-playing')).toBe(true);
+
+    // The reader silences it from the control, which the shell never sees:
+    // the control is the one that has to say so.
+    document.querySelector<HTMLButtonElement>('[data-music-toggle]')?.click();
+    expect(gate.isPlaying()).toBe(false);
+    expect(document.body.classList.contains('is-playing')).toBe(false);
   });
 
   it('leaves no play button behind when the browser refuses the boot-time start', () => {

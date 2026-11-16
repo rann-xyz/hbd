@@ -21,7 +21,19 @@ export interface MusicControlHandle {
   destroy(): void;
 }
 
-export function buildMusicControl(box: MusicBox): MusicControlHandle {
+export interface MusicControlOptions {
+  /**
+   * Called every time the control re-reads the box, including when the tune
+   * starts or stops on its own. The shell uses it to keep the rest of the page
+   * in step — the little resident dances for as long as there is music.
+   */
+  readonly onChange?: (playing: boolean) => void;
+}
+
+export function buildMusicControl(
+  box: MusicBox,
+  options: MusicControlOptions = {},
+): MusicControlHandle {
   const icon = el('span', {
     className: 'music__icon',
     attrs: { 'aria-hidden': 'true' },
@@ -55,6 +67,7 @@ export function buildMusicControl(box: MusicBox): MusicControlHandle {
     // moment there is something to hear — including when the shell started the
     // tune on its own, before anyone pressed anything at all.
     if (playing) setHidden(element, false);
+    options.onChange?.(playing);
   }
 
   const onClick = (): void => {

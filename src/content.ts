@@ -244,18 +244,40 @@ export const FOOT = {
  * and stays put. The lines are cycled in order, never picked at random, so the
  * same tap always gets the same answer and the last one wraps round.
  *
+ * It has three things to say, and which one it reaches for depends on what the
+ * reader has already done: it waits while the surprise is shut, it talks about
+ * the party once it is open, and it has opinions about the cake afterwards.
+ * Boop it once too often and it gives up on the whole arrangement.
+ *
  * No emoji anywhere in here — the house rule for every string on the page.
  */
 export const MASCOT = {
   aria: 'Boop the little friend',
   hint: 'boop me',
+  /** While the surprise is still shut: it is waiting, and it says so. */
   lines: [
     'boop. careful, I am ticklish.',
     'you are the birthday girl. I checked twice.',
-    'I helped with the cake. Mostly by watching.',
     'he built me on a phone, with one thumb.',
+    'no rush. I am not going anywhere.',
+  ],
+  /** Once the party has started. */
+  party: [
+    'you opened it. I have been standing here for ages.',
+    'the cake is that way. I am not allowed to spoil it.',
+    'I practised the song. I only know the bass line.',
     'if you are reading this, you are loved. I do not make the rules.',
   ],
+  /** After the candles are out. */
+  afterCake: [
+    'you blew them all out in one go. I counted.',
+    'I helped with the cake. Mostly by watching.',
+    'the wish is safe with me. I am very bad at secrets.',
+  ],
+  /** Booped once too often. */
+  tooMuch: 'okay. that is enough tickling. I am going to go and stand over there.',
+  /** How many boops it takes to get there. */
+  boopsBeforeTooMuch: 8,
 } as const;
 
 export const MUSIC = {

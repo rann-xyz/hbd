@@ -13,6 +13,7 @@ import { CAKE } from '../content';
 import { el, setHidden, setText } from '../lib/dom';
 import { prefersReducedMotion, pulseClass } from '../lib/motion';
 import { TUNE_REQUEST_EVENT } from '../lib/music';
+import { markCakeCut } from '../lib/party';
 import {
   balloon as balloonArt,
   bunting as buntingArt,
@@ -247,6 +248,9 @@ export function buildCake(): CakeHandle {
   const cutCake = (): void => {
     if (cut) return;
     cut = true;
+    // The little resident has opinions about the cake, and this is how it
+    // finds out there is a slice out.
+    markCakeCut();
     stage.classList.add('is-cut');
     setText(status, CAKE.cutStatus);
     pulseClass(status, 'is-fresh');
