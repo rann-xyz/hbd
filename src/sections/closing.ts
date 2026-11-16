@@ -4,7 +4,7 @@
    that looks signed, and a way back to the beginning.
    ============================================================ */
 
-import { CLOSING, PORTRAIT, RECIPIENT } from '../content';
+import { CLOSING, PORTRAIT } from '../content';
 import { el, qs } from '../lib/dom';
 import { scrollToElement } from '../lib/motion';
 import { bow, sprig, star } from '../lib/svg';
@@ -39,7 +39,7 @@ export function buildClosing(): HTMLElement {
               src: PORTRAIT.src,
               width: PORTRAIT.width,
               height: PORTRAIT.height,
-              alt: `${RECIPIENT.fullName}, photographed once and kept`,
+              alt: PORTRAIT.alt,
               loading: 'lazy',
               decoding: 'async',
             },
