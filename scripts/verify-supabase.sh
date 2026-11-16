@@ -47,7 +47,7 @@ bad()  { echo "  FAIL  $1"; fail=$((fail+1)); }
 req() { # method path [extra curl args...]
   local method="$1" path="$2"; shift 2
   curl -sS -X "$method" "$path" \
-    -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
+    -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \\
     -H 'Content-Type: application/json' "$@"
 }
 
